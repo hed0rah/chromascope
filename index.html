@@ -1,0 +1,1915 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChromaScope</title>
+<style>
+:root, [data-theme="dark"] {
+  --bg: #0a0a0a;
+  --surface: #161616;
+  --surface-alt: #1f1f1f;
+  --border: #262626;
+  --border-strong: #3a3a3a;
+  --fg: #d8d8d8;
+  --fg-strong: #f4f4f4;
+  --muted: #6f6f6f;
+  --muted-strong: #909090;
+  --accent: #00d4ff;
+  --accent-fg: #001620;
+  --danger: #ff4d4d;
+  --warn: #ffb000;
+  --ok: #46c46e;
+  --r: #ff4f4f;
+  --g: #4ec84e;
+  --b: #4f8cff;
+}
+[data-theme="light"] {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-alt: #f0f0f0;
+  --border: #dcdcdc;
+  --border-strong: #b8b8b8;
+  --fg: #1f1f1f;
+  --fg-strong: #000000;
+  --muted: #777;
+  --muted-strong: #555;
+  --accent: #0088cc;
+  --accent-fg: #ffffff;
+  --danger: #c41a1a;
+  --warn: #a86a00;
+  --ok: #1f8a44;
+  --r: #d42020;
+  --g: #208c20;
+  --b: #2050d0;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+  overflow: hidden;
+}
+button, input, select { font-family: inherit; font-size: inherit; color: inherit; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+/* topbar */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 48px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 10px;
+  z-index: 30;
+}
+.brand {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: 13px;
+  color: var(--fg-strong);
+  font-family: ui-monospace, monospace;
+  white-space: nowrap;
+}
+.brand small {
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: 8px;
+  font-size: 11px;
+}
+.topbar .filename {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: 12px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spacer { flex: 1; }
+.btn {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--fg);
+  font-size: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--fg); color: var(--fg-strong); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn:disabled:hover { border-color: var(--border-strong); color: var(--fg); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn.ghost { background: transparent; }
+.btn.icon { padding: 6px 10px; font-size: 13px; }
+
+/* empty state */
+.empty-pane {
+  position: fixed; inset: 48px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  background: var(--bg);
+  z-index: 5;
+}
+.empty-pane.hidden { display: none; }
+.empty-pane h1 {
+  font-size: 40px;
+  font-weight: 200;
+  letter-spacing: -0.02em;
+  color: var(--fg-strong);
+  margin: 0 0 4px;
+}
+.empty-pane .sub {
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.empty-pane p {
+  font-size: 14px;
+  color: var(--muted-strong);
+  margin: 4px 0;
+  max-width: 560px;
+  line-height: 1.55;
+}
+.empty-pane .feat {
+  margin-top: 22px;
+  display: flex;
+  gap: 8px 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 620px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+.empty-pane .feat span { white-space: nowrap; }
+.empty-pane .feat b { color: var(--accent); font-weight: 600; }
+.empty-pane .load-row { margin-top: 28px; display: flex; gap: 10px; }
+.empty-pane .load-btn-big { padding: 12px 28px; font-size: 14px; }
+.empty-pane .keys {
+  margin-top: 20px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+kbd {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  padding: 1px 6px;
+  color: var(--fg);
+  font-size: 11px;
+  border-radius: 2px;
+  font-family: ui-monospace, monospace;
+}
+.empty-pane.drop-active {
+  background: var(--surface);
+  outline: 2px dashed var(--accent);
+  outline-offset: -16px;
+}
+
+/* main app */
+.app {
+  position: fixed; inset: 48px 0 0 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+}
+.app.hidden { display: none; }
+.lab-main {
+  display: grid;
+  grid-template-columns: 46px 1fr 372px;
+  overflow: hidden;
+  min-height: 0;
+}
+@media (max-width: 900px) {
+  .lab-main { grid-template-columns: 46px 1fr; grid-template-rows: 1fr 300px; }
+  .analysis-pane { grid-column: 1 / -1; }
+}
+
+/* tool rail */
+.tool-rail {
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 4px;
+}
+.tool-rail .tool {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted-strong);
+  cursor: pointer;
+  font-size: 15px;
+  border-radius: 3px;
+}
+.tool-rail .tool:hover { color: var(--fg-strong); border-color: var(--border-strong); }
+.tool-rail .tool.active { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
+.tool-rail .rail-sep { width: 24px; height: 1px; background: var(--border); margin: 6px 0; }
+.tool-rail .tool svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+/* viewport */
+.viewport-wrap {
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  overflow: hidden;
+  min-width: 0;
+}
+.viewport {
+  position: relative;
+  overflow: hidden;
+  background:
+    repeating-conic-gradient(var(--surface) 0% 25%, var(--bg) 0% 50%)
+    50% / 22px 22px;
+  cursor: crosshair;
+  min-height: 0;
+}
+.viewport.tool-pan { cursor: grab; }
+.viewport.tool-pan.panning { cursor: grabbing; }
+.viewport.tool-inspect { cursor: crosshair; }
+.viewport.tool-measure { cursor: crosshair; }
+.viewport.tool-pick { cursor: crosshair; }
+.viewport.spacepan { cursor: grab; }
+#view-canvas, #overlay-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+#overlay-canvas { pointer-events: none; }
+
+/* HUD: inspector readout */
+.hud {
+  position: absolute;
+  top: 10px; left: 10px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  border: 1px solid var(--border-strong);
+  padding: 8px 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--fg);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  align-items: center;
+  pointer-events: none;
+  min-width: 188px;
+  backdrop-filter: blur(2px);
+}
+.hud .k { color: var(--muted); }
+.hud .v { color: var(--fg-strong); text-align: right; }
+.hud .swatch-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.hud .swatch {
+  width: 26px; height: 26px;
+  border: 1px solid var(--border-strong);
+}
+.hud .swatch-hex { font-size: 12px; color: var(--fg-strong); }
+.hud.dim .v, .hud.dim .swatch-hex { color: var(--muted); }
+
+/* simulation badge */
+.sim-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: color-mix(in srgb, var(--warn) 22%, var(--bg));
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  pointer-events: none;
+  display: none;
+  max-width: 240px;
+  line-height: 1.4;
+}
+.sim-badge.show { display: block; }
+
+/* minimap */
+.minimap {
+  position: absolute;
+  bottom: 10px; right: 10px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  cursor: pointer;
+  line-height: 0;
+}
+.minimap canvas { display: block; }
+
+/* filters drawer */
+.filters {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 8px 14px;
+  display: flex;
+  gap: 6px 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+}
+.filter label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.filter input[type=range] { width: 70px; accent-color: var(--accent); cursor: pointer; }
+.filter input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+.filter select {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--fg);
+  font-size: 11px;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+.filter .v { color: var(--fg); font-size: 10px; min-width: 30px; text-align: right; }
+.filters .grp-label {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-strong);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+}
+.filters .sep { width: 1px; align-self: stretch; background: var(--border); }
+
+.canvas-toolbar {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 7px 14px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.canvas-toolbar .zoomval {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--fg-strong);
+  min-width: 52px;
+  text-align: center;
+}
+.canvas-toolbar .meta {
+  margin-left: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* analysis pane */
+.analysis-pane {
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+}
+.an-section {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.an-section:last-child { border-bottom: none; }
+.an-section h3 {
+  margin: 0 0 10px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  font-family: ui-monospace, monospace;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.an-section h3 .count { color: var(--muted-strong); font-weight: 400; }
+.an-section h3 .mini-btn {
+  background: transparent; border: 1px solid var(--border-strong);
+  color: var(--muted-strong); font-size: 9px; padding: 2px 7px; cursor: pointer;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.an-section h3 .mini-btn:hover { color: var(--fg-strong); border-color: var(--fg); }
+.empty-state { color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+.sel-info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 14px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+}
+.sel-info .k { color: var(--accent); }
+.sel-info .v { color: var(--fg-strong); text-align: right; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.stat-cell {
+  background: var(--surface);
+  padding: 8px 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+}
+.stat-cell .lbl {
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+}
+.stat-cell .val { color: var(--fg-strong); }
+.stat-cell .val .chip { display:inline-block; width:9px; height:9px; vertical-align:-1px; margin-right:5px; border:1px solid var(--border-strong); }
+
+.hist-svg {
+  width: 100%; height: 80px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: block;
+}
+.hist-legend {
+  display: flex; gap: 12px; margin-top: 4px;
+  font-family: ui-monospace, monospace; font-size: 10px; color: var(--muted);
+}
+.hist-legend .sw { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; }
+
+.hue-wheel { width: 100%; aspect-ratio: 1; max-width: 200px; margin: 0 auto; display: block; }
+
+.dom-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+.dom-cell { background: var(--surface); cursor: pointer; transition: transform 0.15s; }
+.dom-cell:hover { transform: scale(1.04); position: relative; z-index: 2; }
+.dom-cell .swatch-block { width: 100%; aspect-ratio: 1.3 / 1; }
+.dom-cell .swatch-meta { padding: 5px 7px; font-family: ui-monospace, monospace; font-size: 9px; border-top: 1px solid var(--border); }
+.dom-cell .swatch-meta .hex { color: var(--fg-strong); }
+.dom-cell .swatch-meta .pct { color: var(--muted); float: right; }
+
+/* palette (whole image) */
+.palette-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+.pal-cell { background: var(--surface); }
+.pal-cell .pal-sw { width: 100%; aspect-ratio: 1.4 / 1; cursor: pointer; }
+.pal-cell .pal-name {
+  width: 100%; background: transparent; border: none;
+  border-top: 1px solid var(--border);
+  color: var(--fg-strong); font-family: ui-monospace, monospace; font-size: 9px;
+  padding: 4px 5px 1px;
+}
+.pal-cell .pal-name:focus { outline: 1px solid var(--accent); }
+.pal-cell .pal-meta {
+  padding: 0 5px 4px; font-family: ui-monospace, monospace; font-size: 8px; color: var(--muted);
+  display: flex; justify-content: space-between;
+}
+.pal-cell .pal-meta .hex { color: var(--muted-strong); }
+
+/* palette match bars */
+.match-list { display: flex; flex-direction: column; gap: 4px; }
+.match-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: center; font-family: ui-monospace, monospace; font-size: 10px; }
+.match-row .chip { width: 12px; height: 12px; border: 1px solid var(--border-strong); }
+.match-row .bar-wrap { background: var(--surface); border: 1px solid var(--border); height: 12px; position: relative; }
+.match-row .bar { height: 100%; }
+.match-row .barlabel { position: absolute; left: 5px; top: 0; line-height: 12px; color: var(--fg); font-size: 9px; }
+.match-row .pct { color: var(--muted-strong); min-width: 34px; text-align: right; }
+
+/* compare strip */
+.compare-strip {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 0;
+}
+.compare-header {
+  padding: 8px 14px;
+  border-right: 1px solid var(--border);
+  font-family: ui-monospace, monospace;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted);
+  display: flex; align-items: center; gap: 12px;
+  min-width: 188px;
+}
+.compare-header .count { color: var(--fg-strong); background: var(--surface); padding: 2px 8px; border: 1px solid var(--border-strong); }
+.compare-header button { margin-left: auto; background: transparent; border: none; color: var(--muted); font: inherit; cursor: pointer; letter-spacing: 0.1em; }
+.compare-header button:hover { color: var(--fg); }
+.compare-body { display: flex; gap: 1px; background: var(--border); overflow-x: auto; min-height: 0; }
+.compare-empty { padding: 12px 16px; font-style: italic; font-size: 12px; color: var(--muted); align-self: center; }
+.compare-card {
+  flex: 0 0 230px; background: var(--bg); padding: 9px 11px;
+  display: grid; grid-template-rows: auto auto auto auto; gap: 5px;
+}
+.compare-card .cc-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.compare-card .cc-name {
+  font-size: 12px; color: var(--fg-strong); font-weight: 500;
+  font-family: ui-monospace, monospace; background: transparent; border: none;
+  border-bottom: 1px solid transparent; padding: 1px 0; flex: 1; min-width: 0;
+}
+.compare-card .cc-name:focus { outline: none; border-bottom-color: var(--accent); }
+.compare-card .cc-close { background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 0; line-height: 1; }
+.compare-card .cc-close:hover { color: var(--danger); }
+.compare-card .cc-thumb {
+  width: 100%; aspect-ratio: 2 / 1; background-color: var(--surface);
+  background-size: cover; background-position: center; border: 1px solid var(--border); cursor: pointer;
+}
+.compare-card .cc-swatches { display: flex; gap: 1px; height: 16px; }
+.compare-card .cc-swatches > div { flex: 1; }
+.compare-card .cc-meta { font-family: ui-monospace, monospace; font-size: 9px; color: var(--muted); line-height: 1.5; }
+.compare-card .cc-meta .v { color: var(--fg); }
+
+/* modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: none; align-items: center; justify-content: center; z-index: 50; padding: 24px;
+}
+.modal-backdrop.show { display: flex; }
+.modal {
+  background: var(--bg); border: 1px solid var(--border-strong);
+  width: min(720px, 100%); max-height: 86vh; display: flex; flex-direction: column;
+}
+.modal-head { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
+.modal-head h2 { margin: 0; font-size: 14px; font-family: ui-monospace, monospace; color: var(--fg-strong); letter-spacing: 0.02em; }
+.modal-head .close { margin-left: auto; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+.modal-head .close:hover { color: var(--fg-strong); }
+.modal-tabs { display: flex; gap: 4px; padding: 10px 16px 0; }
+.modal-tabs button {
+  background: transparent; border: 1px solid var(--border); border-bottom: none;
+  color: var(--muted); padding: 6px 14px; cursor: pointer; font-size: 12px; font-family: ui-monospace, monospace;
+}
+.modal-tabs button.active { color: var(--fg-strong); background: var(--surface); border-color: var(--border-strong); }
+.modal-body { padding: 14px 16px; overflow: auto; }
+.modal-body .hint { color: var(--muted); font-size: 12px; margin: 0 0 10px; line-height: 1.5; }
+.modal-body textarea {
+  width: 100%; min-height: 300px; background: var(--surface); border: 1px solid var(--border);
+  color: var(--fg); font-family: ui-monospace, monospace; font-size: 11px; padding: 10px; resize: vertical; line-height: 1.5;
+}
+.modal-foot { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+/* toast */
+.toast {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--fg-strong); color: var(--bg);
+  font-family: ui-monospace, monospace; font-size: 12px; padding: 8px 16px;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 60;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">ChromaScope <small>forensic color lab</small></div>
+  <div class="filename" id="filename"></div>
+  <div class="spacer"></div>
+  <input type="file" id="file-input" accept="image/*" hidden>
+  <button class="btn" id="load-btn">Load</button>
+  <button class="btn ghost" id="palette-btn" disabled>Palette</button>
+  <button class="btn ghost" id="export-btn" disabled>Export</button>
+  <button class="btn ghost icon" id="theme-toggle" title="Toggle theme">&#9679;</button>
+</header>
+
+<div class="empty-pane" id="empty-pane">
+  <h1>ChromaScope</h1>
+  <div class="sub">forensic color lab</div>
+  <p>Drop in any painting, scan, photo, or screenshot. Pan and zoom into it, read pixel values live, drag-select regions for full color statistics, and run forensic filters to test "hidden detail" claims yourself.</p>
+  <div class="feat">
+    <span><b>zoom</b> deep-zoom + minimap</span>
+    <span><b>inspect</b> live RGB / HSV readout</span>
+    <span><b>measure</b> pixel distance</span>
+    <span><b>analyze</b> histograms, hue wheel, k-means</span>
+    <span><b>forensic</b> shadow-stretch, edges, mirror, fake-IR/UV</span>
+    <span><b>palette</b> extract + classify + export</span>
+  </div>
+  <div class="load-row">
+    <button class="btn primary load-btn-big" id="load-btn-big">Load image</button>
+    <button class="btn ghost load-btn-big" id="url-btn-big">From URL</button>
+  </div>
+  <div class="keys">
+    <span>or drag a file anywhere on this page</span>
+    <span>or paste from clipboard with <kbd>Ctrl</kbd>+<kbd>V</kbd></span>
+  </div>
+  <p style="margin-top:24px; font-size:12px; color:var(--muted)">Everything runs in your browser. Nothing uploads anywhere.</p>
+</div>
+
+<div class="app hidden" id="app">
+  <div class="lab-main">
+
+    <div class="tool-rail" id="tool-rail">
+      <button class="tool active" data-tool="select" title="Select region (V)" aria-label="Select">
+        <svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 4h-6M20 4v6M4 20h6M4 20v-6M20 20h-6M20 20v-6"/></svg>
+      </button>
+      <button class="tool" data-tool="pan" title="Pan (H or hold Space)" aria-label="Pan">
+        <svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 013 0V11m0-1.5a1.5 1.5 0 013 0V12m0-1a1.5 1.5 0 013 0v4a5 5 0 01-5 5h-2.5a5 5 0 01-3.6-1.5L6 17.5s-1.5-1.6-2-2.2c-.5-.7 0-1.8 1-1.8.7 0 1.2.4 1.5.8L8 16V8a1.5 1.5 0 013 0"/></svg>
+      </button>
+      <button class="tool" data-tool="inspect" title="Inspect pixel (I)" aria-label="Inspect">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-5-5"/></svg>
+      </button>
+      <button class="tool" data-tool="measure" title="Measure distance (M)" aria-label="Measure">
+        <svg viewBox="0 0 24 24"><path d="M4 14L14 4l6 6L10 20z"/><path d="M7 11l1.5 1.5M10 8l1.5 1.5M13 11l1.5 1.5"/></svg>
+      </button>
+      <button class="tool" data-tool="pick" title="Eyedropper (P)" aria-label="Pick">
+        <svg viewBox="0 0 24 24"><path d="M19 5a2 2 0 00-3 0l-1.5 1.5-1-1-1.5 1.5 1 1L4 17v3h3l9-9 1 1 1.5-1.5-1-1L19 8a2 2 0 000-3z"/></svg>
+      </button>
+      <div class="rail-sep"></div>
+      <button class="tool" data-act="zoom-in" title="Zoom in (+)" aria-label="Zoom in">
+        <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M20 20l-5-5M10 7v6M7 10h6"/></svg>
+      </button>
+      <button class="tool" data-act="zoom-out" title="Zoom out (-)" aria-label="Zoom out">
+        <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M20 20l-5-5M7 10h6"/></svg>
+      </button>
+      <button class="tool" data-act="fit" title="Fit (0)" aria-label="Fit">
+        <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </button>
+      <button class="tool" data-act="actual" title="1:1 (1)" aria-label="Actual size">
+        <svg viewBox="0 0 24 24"><path d="M7 8v8M7 8L5 9.5M13 8h3a2 2 0 012 2v0a2 2 0 01-2 2h-3v4h5"/></svg>
+      </button>
+    </div>
+
+    <div class="viewport-wrap">
+      <div class="viewport tool-select" id="viewport">
+        <canvas id="view-canvas"></canvas>
+        <canvas id="overlay-canvas"></canvas>
+        <div class="hud dim" id="hud">
+          <div class="swatch-row"><div class="swatch" id="hud-swatch"></div><span class="swatch-hex" id="hud-hex">#------</span></div>
+          <span class="k">src xy</span><span class="v" id="hud-xy">-, -</span>
+          <span class="k">rgb</span><span class="v" id="hud-rgb">-, -, -</span>
+          <span class="k">hsv</span><span class="v" id="hud-hsv">-, -, -</span>
+          <span class="k">lum</span><span class="v" id="hud-lum">-</span>
+        </div>
+        <div class="sim-badge" id="sim-badge">simulation: visual approximation, not multispectral data</div>
+        <div class="minimap" id="minimap"><canvas id="minimap-canvas"></canvas></div>
+      </div>
+
+      <div class="filters">
+        <span class="grp-label">display</span>
+        <div class="filter"><label>Bright</label><input type="range" id="f-brightness" min="0" max="200" value="100"><span class="v" id="v-brightness">100</span></div>
+        <div class="filter"><label>Contrast</label><input type="range" id="f-contrast" min="0" max="300" value="100"><span class="v" id="v-contrast">100</span></div>
+        <div class="filter"><label>Sat</label><input type="range" id="f-saturate" min="0" max="300" value="100"><span class="v" id="v-saturate">100</span></div>
+        <div class="filter"><label>Hue</label><input type="range" id="f-hue" min="0" max="360" value="0"><span class="v" id="v-hue">0</span></div>
+        <div class="filter"><label>Inv</label><input type="checkbox" id="f-invert"></div>
+        <div class="filter"><label>Gray</label><input type="checkbox" id="f-gray"></div>
+        <div class="sep"></div>
+        <span class="grp-label">forensic</span>
+        <div class="filter">
+          <label>Mode</label>
+          <select id="f-mode">
+            <option value="none">none</option>
+            <option value="stretch">shadow stretch</option>
+            <option value="threshold">threshold</option>
+            <option value="posterize">posterize</option>
+            <option value="edges">edges (sobel)</option>
+            <option value="chan-r">red channel</option>
+            <option value="chan-g">green channel</option>
+            <option value="chan-b">blue channel</option>
+            <option value="fake-ir">fake IR</option>
+            <option value="fake-uv">fake UV</option>
+          </select>
+        </div>
+        <div class="filter" id="mode-slider-wrap" style="display:none"><label id="mode-slider-label">amt</label><input type="range" id="f-mode-amt" min="0" max="100" value="60"><span class="v" id="v-mode-amt">60</span></div>
+        <div class="filter"><label>Mirror</label>
+          <select id="f-mirror"><option value="none">none</option><option value="flip">flip</option><option value="ghost">ghost</option></select>
+        </div>
+        <button class="btn ghost" id="f-reset" style="margin-left:auto">Reset</button>
+      </div>
+
+      <div class="canvas-toolbar">
+        <span class="zoomval" id="zoomval">100%</span>
+        <button class="btn" data-act="fit">Fit</button>
+        <button class="btn" data-act="actual">1:1</button>
+        <button class="btn" id="btn-whole">Select all</button>
+        <button class="btn" id="btn-clear">Clear</button>
+        <button class="btn primary" id="btn-add" disabled>Save region</button>
+        <span class="meta" id="toolbar-meta">drag a region to analyze</span>
+      </div>
+    </div>
+
+    <aside class="analysis-pane">
+      <div class="an-section">
+        <h3>Image palette <span class="count" id="pal-count"></span><button class="mini-btn" id="pal-extract">extract</button></h3>
+        <div id="pal-empty" class="empty-state">Click extract to pull a 12-color palette from the whole image (k-means). Rename swatches, then classify any selection against them.</div>
+        <div class="palette-grid" id="palette-grid" style="display:none"></div>
+      </div>
+      <div class="an-section">
+        <h3>Selection</h3>
+        <div id="sel-empty" class="empty-state">Drag a rectangle on the image to sample its colors. Or click "Select all".</div>
+        <div class="sel-info" id="sel-info" style="display:none"></div>
+      </div>
+      <div class="an-section">
+        <h3>Stats</h3>
+        <div id="stats-empty" class="empty-state">No selection yet.</div>
+        <div class="stats-grid" id="stats-grid" style="display:none"></div>
+      </div>
+      <div class="an-section">
+        <h3>RGB <span class="count">64 bins / channel</span></h3>
+        <svg class="hist-svg" id="rgb-hist" viewBox="0 0 256 100" preserveAspectRatio="none"></svg>
+        <div class="hist-legend">
+          <span><span class="sw" style="background:var(--r)"></span>R</span>
+          <span><span class="sw" style="background:var(--g)"></span>G</span>
+          <span><span class="sw" style="background:var(--b)"></span>B</span>
+        </div>
+      </div>
+      <div class="an-section">
+        <h3>Hue distribution <span class="count">72 bins</span></h3>
+        <svg class="hue-wheel" id="hue-wheel" viewBox="-110 -110 220 220"></svg>
+      </div>
+      <div class="an-section">
+        <h3>Dominant colors <span class="count" id="dom-count">k-means k=8</span></h3>
+        <div class="dom-grid" id="dom-grid">
+          <div class="empty-state" style="grid-column:1/-1; padding:8px">No selection yet.</div>
+        </div>
+      </div>
+      <div class="an-section" id="match-section" style="display:none">
+        <h3>Palette match <span class="count">nearest pigment</span></h3>
+        <div class="match-list" id="match-list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="compare-strip" id="compare-strip">
+    <div class="compare-header">
+      Regions <span class="count" id="compare-count">0</span>
+      <button id="compare-clear">clear all</button>
+    </div>
+    <div class="compare-body" id="compare-body">
+      <div class="compare-empty">Sample a region, then click "Save region" to stack regions here side by side. Saved regions also feed the Export panel.</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="export-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Export</h2>
+      <button class="close" id="export-close">&times;</button>
+    </div>
+    <div class="modal-tabs" id="export-tabs">
+      <button data-tab="css" class="active">CSS variables</button>
+      <button data-tab="json">Palette JSON</button>
+      <button data-tab="painting">painting.json</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint" id="export-hint"></p>
+      <textarea id="export-text" spellcheck="false" readonly></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="export-copy">Copy</button>
+      <button class="btn primary" id="export-download">Download</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+// ============================================================
+// THEME
+// ============================================================
+const htmlEl = document.documentElement;
+let booted = false;
+function setTheme(t) {
+  htmlEl.dataset.theme = t;
+  document.getElementById('theme-toggle').textContent = t === 'dark' ? '●' : '○';
+  try { localStorage.setItem('chromascope-theme', t); } catch(e){}
+  if (booted && state.img) { renderMinimap(); render(); }
+}
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  setTheme(htmlEl.dataset.theme === 'dark' ? 'light' : 'dark');
+});
+try { setTheme(localStorage.getItem('chromascope-theme') || 'dark'); } catch(e) { setTheme('dark'); }
+
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+// ============================================================
+// COLOR UTILS
+// ============================================================
+function rgbToHsv(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max - min;
+  let h = 0;
+  const s = max === 0 ? 0 : d / max;
+  const v = max;
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  return [h, s * 100, v * 100];
+}
+function rgbToHex(r, g, b) {
+  return '#' + [r,g,b].map(v => Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0').toUpperCase()).join('');
+}
+function luminance(r, g, b) { return 0.299*r + 0.587*g + 0.114*b; }
+function hueName(h) {
+  if (h < 15 || h >= 345) return 'red';
+  if (h < 45)  return 'red-orange';
+  if (h < 75)  return 'orange-yellow';
+  if (h < 105) return 'yellow-green';
+  if (h < 135) return 'green';
+  if (h < 165) return 'green-cyan';
+  if (h < 195) return 'cyan';
+  if (h < 225) return 'cyan-blue';
+  if (h < 255) return 'blue';
+  if (h < 285) return 'blue-violet';
+  if (h < 315) return 'violet';
+  return 'magenta-red';
+}
+function slugify(s) {
+  return (s||'').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'item';
+}
+
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  img: null,
+  src: null, srcCtx: null,        // raw analysis canvas (capped internal res)
+  fx: null, fxCtx: null,          // pixel-filtered display canvas
+  srcImageData: null,             // cached raw pixels
+  w: 0, h: 0,                     // internal canvas dims
+  origW: 0, origH: 0,            // original source dims
+  view: { scale: 1, tx: 0, ty: 0 },
+  minScale: 0.05, maxScale: 64,
+  tool: 'select',
+  selection: null,                // {x,y,w,h} in internal px
+  palette: null,                  // [{name,hex,rgb,pct}]
+  regions: [],                    // saved regions for compare + export
+  regionCounter: 0,
+  measure: null,                  // {a:{x,y}, b:{x,y}} in internal px
+  hover: null,                    // {x,y} internal px
+  filename: 'image',
+};
+let dpr = Math.max(1, window.devicePixelRatio || 1);
+
+// DOM
+const viewport = document.getElementById('viewport');
+const viewCanvas = document.getElementById('view-canvas');
+const overlayCanvas = document.getElementById('overlay-canvas');
+const viewCtx = viewCanvas.getContext('2d');
+const overlayCtx = overlayCanvas.getContext('2d');
+const minimapCanvas = document.getElementById('minimap-canvas');
+const minimapCtx = minimapCanvas.getContext('2d');
+
+// ============================================================
+// FILE LOADING
+// ============================================================
+const fileInput = document.getElementById('file-input');
+fileInput.addEventListener('change', (e) => { if (e.target.files[0]) loadImageFile(e.target.files[0]); });
+document.getElementById('load-btn').addEventListener('click', () => fileInput.click());
+document.getElementById('load-btn-big').addEventListener('click', () => fileInput.click());
+document.getElementById('url-btn-big').addEventListener('click', loadFromUrlPrompt);
+
+let dragDepth = 0;
+document.body.addEventListener('dragenter', (e) => {
+  e.preventDefault(); dragDepth++;
+  if (e.dataTransfer.types.includes('Files')) document.getElementById('empty-pane').classList.add('drop-active');
+});
+document.body.addEventListener('dragleave', (e) => {
+  e.preventDefault(); dragDepth--;
+  if (dragDepth <= 0) { document.getElementById('empty-pane').classList.remove('drop-active'); dragDepth = 0; }
+});
+document.body.addEventListener('dragover', (e) => e.preventDefault());
+document.body.addEventListener('drop', (e) => {
+  e.preventDefault(); dragDepth = 0;
+  document.getElementById('empty-pane').classList.remove('drop-active');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadImageFile(f);
+});
+document.addEventListener('paste', (e) => {
+  if (!e.clipboardData) return;
+  for (const item of e.clipboardData.items) {
+    if (item.type.startsWith('image/')) { const f = item.getAsFile(); if (f) loadImageFile(f); break; }
+  }
+});
+
+async function loadImageFile(file) {
+  const url = URL.createObjectURL(file);
+  try { await loadImageFromSrc(url, false); state.filename = file.name; finishLoad(file.name); }
+  catch (e) { alert('Could not load image: ' + e.message); }
+}
+function loadFromUrlPrompt() {
+  const u = prompt('Image URL (must allow cross-origin reads, or the lab cannot sample pixels):');
+  if (!u) return;
+  loadImageFromSrc(u, true)
+    .then(() => { state.filename = u.split('/').pop().split('?')[0] || 'image'; finishLoad(state.filename + '  (' + new URL(u, location.href).host + ')'); })
+    .catch((e) => alert('Could not load image: ' + e.message + '\nMany hosts block cross-origin pixel reads. Download the file and load it locally instead.'));
+}
+function loadImageFromSrc(src, cross) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    if (cross) img.crossOrigin = 'anonymous';
+    img.onload = () => { setupImage(img); resolve(); };
+    img.onerror = () => reject(new Error('decode failed'));
+    img.src = src;
+  });
+}
+function finishLoad(label) {
+  document.getElementById('filename').textContent = label + '  ·  ' + state.origW + '×' + state.origH;
+  document.getElementById('empty-pane').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('palette-btn').disabled = false;
+  document.getElementById('export-btn').disabled = false;
+  resizeCanvases();
+  fitView();
+  render();
+}
+
+// ============================================================
+// IMAGE SETUP -> raw source canvas (capped internal resolution)
+// ============================================================
+const MAX_SIDE = 2200;
+function setupImage(img) {
+  state.img = img;
+  state.origW = img.naturalWidth || img.width;
+  state.origH = img.naturalHeight || img.height;
+  const scale = Math.min(1, MAX_SIDE / Math.max(state.origW, state.origH));
+  const iw = Math.max(1, Math.round(state.origW * scale));
+  const ih = Math.max(1, Math.round(state.origH * scale));
+  state.w = iw; state.h = ih;
+
+  state.src = document.createElement('canvas');
+  state.src.width = iw; state.src.height = ih;
+  state.srcCtx = state.src.getContext('2d', { willReadFrequently: true });
+  state.srcCtx.drawImage(img, 0, 0, iw, ih);
+
+  state.fx = document.createElement('canvas');
+  state.fx.width = iw; state.fx.height = ih;
+  state.fxCtx = state.fx.getContext('2d', { willReadFrequently: true });
+
+  try {
+    state.srcImageData = state.srcCtx.getImageData(0, 0, iw, ih);
+  } catch (e) {
+    state.srcImageData = null;
+    toast('Pixel read blocked (cross-origin image). Analysis disabled.');
+  }
+
+  // reset
+  state.selection = null;
+  state.measure = null;
+  state.palette = null;
+  state.regions = [];
+  state.regionCounter = 0;
+  state.hover = null;
+  document.getElementById('btn-add').disabled = true;
+  document.getElementById('toolbar-meta').textContent =
+    state.origW + '×' + state.origH + ' source → ' + iw + '×' + ih + ' sampling';
+  resetFilters(true);
+  resetPanel();
+  resetPalette();
+  renderCompare();
+  renderMinimap();
+}
+
+// ============================================================
+// VIEWPORT: transform, render, fit, zoom, coordinate mapping
+// ============================================================
+function resizeCanvases() {
+  dpr = Math.max(1, window.devicePixelRatio || 1);
+  const r = viewport.getBoundingClientRect();
+  for (const c of [viewCanvas, overlayCanvas]) {
+    c.width = Math.max(1, Math.round(r.width * dpr));
+    c.height = Math.max(1, Math.round(r.height * dpr));
+  }
+}
+function vpSize() { const r = viewport.getBoundingClientRect(); return { w: r.width, h: r.height }; }
+
+function srcToScreen(sx, sy) { return { x: sx * state.view.scale + state.view.tx, y: sy * state.view.scale + state.view.ty }; }
+function screenToSrc(px, py) { return { x: (px - state.view.tx) / state.view.scale, y: (py - state.view.ty) / state.view.scale }; }
+function mousePos(ev) { const r = viewport.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+
+function fitView() {
+  const { w: vw, h: vh } = vpSize();
+  const pad = 24;
+  const s = Math.min((vw - pad) / state.w, (vh - pad) / state.h);
+  state.minScale = Math.min(0.05, s * 0.5);
+  state.view.scale = s;
+  state.view.tx = (vw - state.w * s) / 2;
+  state.view.ty = (vh - state.h * s) / 2;
+}
+function clampScale(s) { return Math.max(state.minScale, Math.min(state.maxScale, s)); }
+function setScaleCentered(newScale, cx, cy) {
+  newScale = clampScale(newScale);
+  const before = screenToSrc(cx, cy);
+  state.view.scale = newScale;
+  state.view.tx = cx - before.x * newScale;
+  state.view.ty = cy - before.y * newScale;
+  clampPan();
+  render();
+}
+function zoomBy(factor, cx, cy) {
+  const sz = vpSize();
+  if (cx == null) { cx = sz.w / 2; cy = sz.h / 2; }
+  setScaleCentered(state.view.scale * factor, cx, cy);
+}
+function clampPan() {
+  const { w: vw, h: vh } = vpSize();
+  const iw = state.w * state.view.scale, ih = state.h * state.view.scale;
+  const margin = 60;
+  // keep at least part of the image on screen
+  state.view.tx = Math.min(vw - margin, Math.max(margin - iw, state.view.tx));
+  state.view.ty = Math.min(vh - margin, Math.max(margin - ih, state.view.ty));
+}
+
+let renderQueued = false;
+function render() {
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => { renderQueued = false; doRender(); });
+}
+function doRender() {
+  if (!state.src) return;
+  const drawSrc = fxState.active ? state.fx : state.src;
+  const v = state.view;
+  viewCtx.setTransform(1, 0, 0, 1, 0, 0);
+  viewCtx.clearRect(0, 0, viewCanvas.width, viewCanvas.height);
+  viewCtx.imageSmoothingEnabled = v.scale < 3.5;
+  viewCtx.filter = fxState.css || 'none';
+
+  const mirror = document.getElementById('f-mirror').value;
+  function blit(flip, alpha) {
+    viewCtx.save();
+    viewCtx.globalAlpha = alpha;
+    viewCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    viewCtx.translate(v.tx, v.ty);
+    viewCtx.scale(v.scale, v.scale);
+    if (flip) { viewCtx.translate(state.w, 0); viewCtx.scale(-1, 1); }
+    viewCtx.drawImage(drawSrc, 0, 0);
+    viewCtx.restore();
+  }
+  if (mirror === 'flip') blit(true, 1);
+  else if (mirror === 'ghost') { blit(false, 1); viewCtx.filter = fxState.css || 'none'; blit(true, 0.5); }
+  else blit(false, 1);
+
+  viewCtx.filter = 'none';
+  renderOverlay();
+  updateZoomLabel();
+  renderMinimapViewport();
+}
+function updateZoomLabel() {
+  // express zoom relative to original-resolution pixels
+  const eff = state.view.scale * (state.w / (state.origW || state.w));
+  document.getElementById('zoomval').textContent = Math.round(eff * 100) + '%';
+}
+
+// ============================================================
+// OVERLAY: selection rect, measure line, hover crosshair, regions
+// ============================================================
+function renderOverlay() {
+  overlayCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const { w: vw, h: vh } = vpSize();
+  overlayCtx.clearRect(0, 0, vw, vh);
+  const accent = cssVar('--accent') || '#00d4ff';
+
+  // saved regions (faint outlines + labels)
+  overlayCtx.lineWidth = 1;
+  overlayCtx.font = '10px ui-monospace, monospace';
+  for (const reg of state.regions) {
+    const a = srcToScreen(reg.x, reg.y);
+    const w = reg.w * state.view.scale, h = reg.h * state.view.scale;
+    overlayCtx.strokeStyle = 'rgba(255,255,255,0.45)';
+    overlayCtx.strokeRect(a.x + 0.5, a.y + 0.5, w, h);
+    overlayCtx.fillStyle = 'rgba(0,0,0,0.55)';
+    const lw = overlayCtx.measureText(reg.label).width + 8;
+    overlayCtx.fillRect(a.x, a.y - 14, lw, 14);
+    overlayCtx.fillStyle = '#fff';
+    overlayCtx.fillText(reg.label, a.x + 4, a.y - 4);
+  }
+
+  // current selection
+  if (state.selection) {
+    const a = srcToScreen(state.selection.x, state.selection.y);
+    const w = state.selection.w * state.view.scale, h = state.selection.h * state.view.scale;
+    overlayCtx.save();
+    overlayCtx.fillStyle = 'rgba(0,0,0,0.42)';
+    overlayCtx.beginPath();
+    overlayCtx.rect(0, 0, vw, vh);
+    overlayCtx.rect(a.x, a.y, w, h);
+    overlayCtx.fill('evenodd');
+    overlayCtx.strokeStyle = accent;
+    overlayCtx.lineWidth = 1.5;
+    overlayCtx.strokeRect(a.x + 0.5, a.y + 0.5, w, h);
+    overlayCtx.restore();
+  }
+
+  // measure line
+  if (state.measure && state.measure.a) {
+    const a = srcToScreen(state.measure.a.x, state.measure.a.y);
+    const b = state.measure.b ? srcToScreen(state.measure.b.x, state.measure.b.y) : a;
+    overlayCtx.strokeStyle = accent;
+    overlayCtx.lineWidth = 1.5;
+    overlayCtx.beginPath(); overlayCtx.moveTo(a.x, a.y); overlayCtx.lineTo(b.x, b.y); overlayCtx.stroke();
+    for (const p of [a, b]) {
+      overlayCtx.fillStyle = accent;
+      overlayCtx.beginPath(); overlayCtx.arc(p.x, p.y, 3, 0, 7); overlayCtx.fill();
+    }
+    if (state.measure.b) drawMeasureLabel(a, b);
+  }
+}
+function drawMeasureLabel(a, b) {
+  const sf = state.origW / state.w;
+  const dxs = (state.measure.b.x - state.measure.a.x);
+  const dys = (state.measure.b.y - state.measure.a.y);
+  const distInternal = Math.hypot(dxs, dys);
+  const distOrig = distInternal * sf;
+  const pctW = distInternal / state.w * 100;
+  const ang = (Math.atan2(dys, dxs) * 180 / Math.PI).toFixed(1);
+  const txt = Math.round(distOrig) + 'px  ' + pctW.toFixed(1) + '%W  ' + ang + '°';
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  overlayCtx.font = '11px ui-monospace, monospace';
+  const w = overlayCtx.measureText(txt).width + 10;
+  overlayCtx.fillStyle = 'rgba(0,0,0,0.7)';
+  overlayCtx.fillRect(mx - w/2, my - 22, w, 16);
+  overlayCtx.fillStyle = '#fff';
+  overlayCtx.textAlign = 'center';
+  overlayCtx.fillText(txt, mx, my - 10);
+  overlayCtx.textAlign = 'left';
+}
+
+// ============================================================
+// MINIMAP
+// ============================================================
+function renderMinimap() {
+  if (!state.src) return;
+  const maxDim = 150;
+  const s = Math.min(maxDim / state.w, maxDim / state.h);
+  const mw = Math.max(1, Math.round(state.w * s)), mh = Math.max(1, Math.round(state.h * s));
+  minimapCanvas.width = mw; minimapCanvas.height = mh;
+  minimapCanvas.style.width = mw + 'px'; minimapCanvas.style.height = mh + 'px';
+  minimapCtx.clearRect(0, 0, mw, mh);
+  minimapCtx.drawImage(state.src, 0, 0, mw, mh);
+  state._mmScale = s;
+  renderMinimapViewport();
+}
+function renderMinimapViewport() {
+  if (!state.src || !state._mmScale) return;
+  const s = state._mmScale;
+  const mw = minimapCanvas.width, mh = minimapCanvas.height;
+  // redraw base then box
+  minimapCtx.clearRect(0, 0, mw, mh);
+  minimapCtx.drawImage(state.src, 0, 0, mw, mh);
+  const { w: vw, h: vh } = vpSize();
+  const tl = screenToSrc(0, 0), br = screenToSrc(vw, vh);
+  const x = Math.max(0, tl.x) * s, y = Math.max(0, tl.y) * s;
+  const x2 = Math.min(state.w, br.x) * s, y2 = Math.min(state.h, br.y) * s;
+  minimapCtx.strokeStyle = cssVar('--accent') || '#00d4ff';
+  minimapCtx.lineWidth = 1.5;
+  minimapCtx.strokeRect(x + 0.5, y + 0.5, Math.max(2, x2 - x), Math.max(2, y2 - y));
+}
+function minimapTo(ev) {
+  const r = minimapCanvas.getBoundingClientRect();
+  const mx = (ev.clientX - r.left) / r.width * state.w;
+  const my = (ev.clientY - r.top) / r.height * state.h;
+  const { w: vw, h: vh } = vpSize();
+  state.view.tx = vw / 2 - mx * state.view.scale;
+  state.view.ty = vh / 2 - my * state.view.scale;
+  clampPan(); render();
+}
+minimapCanvas.addEventListener('mousedown', (e) => {
+  minimapTo(e);
+  const move = (ev) => minimapTo(ev);
+  const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+  window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+  e.stopPropagation();
+});
+
+// ============================================================
+// TOOLS
+// ============================================================
+const toolClasses = ['tool-select','tool-pan','tool-inspect','tool-measure','tool-pick'];
+function setTool(t) {
+  state.tool = t;
+  document.querySelectorAll('.tool-rail .tool[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
+  viewport.classList.remove(...toolClasses);
+  viewport.classList.add('tool-' + t);
+  document.getElementById('toolbar-meta').textContent = ({
+    select: 'drag a region to analyze', pan: 'drag to pan', inspect: 'move cursor to read pixels',
+    measure: 'click two points to measure', pick: 'click to sample a pixel',
+  })[t];
+}
+document.getElementById('tool-rail').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  if (btn.dataset.tool) setTool(btn.dataset.tool);
+  else if (btn.dataset.act) doAct(btn.dataset.act);
+});
+document.querySelectorAll('.canvas-toolbar [data-act]').forEach(b => b.addEventListener('click', () => doAct(b.dataset.act)));
+function doAct(a) {
+  if (a === 'zoom-in') zoomBy(1.4);
+  else if (a === 'zoom-out') zoomBy(1/1.4);
+  else if (a === 'fit') { fitView(); render(); }
+  else if (a === 'actual') setActual();
+}
+// 1:1 means one internal-canvas pixel maps to one screen pixel
+function setActual() { const sz = vpSize(); setScaleCentered(1, sz.w/2, sz.h/2); }
+
+// ============================================================
+// POINTER INTERACTION ON VIEWPORT
+// ============================================================
+let spaceDown = false;
+let interaction = null; // {type, ...}
+viewport.addEventListener('wheel', (e) => {
+  if (!state.src) return;
+  e.preventDefault();
+  const m = mousePos(e);
+  const factor = e.deltaY < 0 ? 1.12 : 1/1.12;
+  setScaleCentered(state.view.scale * factor, m.x, m.y);
+}, { passive: false });
+
+viewport.addEventListener('mousedown', (e) => {
+  if (!state.src) return;
+  if (e.button !== 0 && e.button !== 1) return;
+  const m = mousePos(e);
+  const wantPan = state.tool === 'pan' || spaceDown || e.button === 1;
+  if (wantPan) {
+    interaction = { type: 'pan', startX: m.x, startY: m.y, ox: state.view.tx, oy: state.view.ty };
+    viewport.classList.add('panning');
+    e.preventDefault();
+    return;
+  }
+  if (state.tool === 'select') {
+    const s = screenToSrc(m.x, m.y);
+    interaction = { type: 'select', start: clampSrc(s), moved: false };
+  } else if (state.tool === 'measure') {
+    const s = clampSrc(screenToSrc(m.x, m.y));
+    state.measure = { a: s, b: null };
+    interaction = { type: 'measure' };
+    render();
+  } else if (state.tool === 'pick') {
+    pickPixel(clampSrc(screenToSrc(m.x, m.y)));
+  } else if (state.tool === 'inspect') {
+    // inspect uses hover; click copies hex
+    const s = clampSrc(screenToSrc(m.x, m.y));
+    const px = readPixel(s.x, s.y);
+    if (px) { copyText(rgbToHex(px[0],px[1],px[2])); toast('Copied ' + rgbToHex(px[0],px[1],px[2])); }
+  }
+});
+window.addEventListener('mousemove', (e) => {
+  if (!state.src) return;
+  const m = mousePos(e);
+  // hover readout (when cursor within viewport)
+  const within = m.x >= 0 && m.y >= 0 && m.x <= vpSize().w && m.y <= vpSize().h;
+  if (within && !interaction) updateHud(clampSrc(screenToSrc(m.x, m.y)));
+
+  if (!interaction) return;
+  if (interaction.type === 'pan') {
+    state.view.tx = interaction.ox + (m.x - interaction.startX);
+    state.view.ty = interaction.oy + (m.y - interaction.startY);
+    clampPan(); render();
+  } else if (interaction.type === 'select') {
+    interaction.moved = true;
+    const cur = clampSrc(screenToSrc(m.x, m.y));
+    const s = interaction.start;
+    state.selection = normRect(s.x, s.y, cur.x, cur.y);
+    render();
+  } else if (interaction.type === 'measure') {
+    state.measure.b = clampSrc(screenToSrc(m.x, m.y));
+    render();
+    updateHud(state.measure.b);
+  }
+});
+window.addEventListener('mouseup', (e) => {
+  if (!interaction) return;
+  const t = interaction.type, moved = interaction.moved;
+  if (t === 'pan') viewport.classList.remove('panning');
+  interaction = null;
+  if (t === 'select') {
+    if (!moved || !state.selection || state.selection.w < 3 || state.selection.h < 3) {
+      state.selection = null; render(); resetPanel(); document.getElementById('btn-add').disabled = true;
+    } else {
+      document.getElementById('btn-add').disabled = false; analyzeSelection();
+    }
+  }
+});
+function clampSrc(p) { return { x: Math.max(0, Math.min(state.w - 1, p.x)), y: Math.max(0, Math.min(state.h - 1, p.y)) }; }
+function normRect(x1, y1, x2, y2) {
+  return { x: Math.min(x1,x2), y: Math.min(y1,y2), w: Math.abs(x2-x1), h: Math.abs(y2-y1) };
+}
+
+function readPixel(x, y) {
+  if (!state.srcImageData) return null;
+  const xi = Math.max(0, Math.min(state.w - 1, Math.round(x)));
+  const yi = Math.max(0, Math.min(state.h - 1, Math.round(y)));
+  const i = (yi * state.w + xi) * 4;
+  const d = state.srcImageData.data;
+  return [d[i], d[i+1], d[i+2]];
+}
+function updateHud(s) {
+  state.hover = s;
+  const hud = document.getElementById('hud');
+  const px = readPixel(s.x, s.y);
+  if (!px) { hud.classList.add('dim'); return; }
+  hud.classList.remove('dim');
+  const [r,g,b] = px;
+  const hex = rgbToHex(r,g,b);
+  const [h,sa,v] = rgbToHsv(r,g,b);
+  const sf = state.origW / state.w;
+  document.getElementById('hud-swatch').style.background = hex;
+  document.getElementById('hud-hex').textContent = hex;
+  document.getElementById('hud-xy').textContent = Math.round(s.x*sf) + ', ' + Math.round(s.y*sf);
+  document.getElementById('hud-rgb').textContent = r + ', ' + g + ', ' + b;
+  document.getElementById('hud-hsv').textContent = Math.round(h) + '° ' + Math.round(sa) + '% ' + Math.round(v) + '%';
+  document.getElementById('hud-lum').textContent = luminance(r,g,b).toFixed(0);
+}
+function pickPixel(s) {
+  const px = readPixel(s.x, s.y);
+  if (!px) return;
+  const hex = rgbToHex(px[0], px[1], px[2]);
+  copyText(hex);
+  toast('Picked ' + hex + '  (copied)');
+}
+
+// ============================================================
+// FILTERS (display only; analysis always uses raw source)
+// ============================================================
+const fxState = { css: '', active: false };
+const fInputs = {
+  brightness: document.getElementById('f-brightness'),
+  contrast: document.getElementById('f-contrast'),
+  saturate: document.getElementById('f-saturate'),
+  hue: document.getElementById('f-hue'),
+  invert: document.getElementById('f-invert'),
+  gray: document.getElementById('f-gray'),
+  mode: document.getElementById('f-mode'),
+  amt: document.getElementById('f-mode-amt'),
+  mirror: document.getElementById('f-mirror'),
+};
+function buildCssFilter() {
+  const b = fInputs.brightness.value, c = fInputs.contrast.value, s = fInputs.saturate.value, hu = fInputs.hue.value;
+  document.getElementById('v-brightness').textContent = b;
+  document.getElementById('v-contrast').textContent = c;
+  document.getElementById('v-saturate').textContent = s;
+  document.getElementById('v-hue').textContent = hu;
+  let f = `brightness(${b}%) contrast(${c}%) saturate(${s}%) hue-rotate(${hu}deg)`;
+  if (fInputs.invert.checked) f += ' invert(1)';
+  if (fInputs.gray.checked) f += ' grayscale(1)';
+  fxState.css = f;
+}
+function applyFilters() {
+  buildCssFilter();
+  computeFx();
+  updateModeUi();
+  render();
+}
+function updateModeUi() {
+  const mode = fInputs.mode.value;
+  const wrap = document.getElementById('mode-slider-wrap');
+  const label = document.getElementById('mode-slider-label');
+  const showSlider = ['stretch','threshold','posterize','fake-ir','fake-uv'].includes(mode);
+  wrap.style.display = showSlider ? '' : 'none';
+  label.textContent = mode === 'threshold' ? 'level' : mode === 'posterize' ? 'levels' : 'amt';
+  document.getElementById('v-mode-amt').textContent = fInputs.amt.value;
+  const sim = document.getElementById('sim-badge');
+  sim.classList.toggle('show', mode === 'fake-ir' || mode === 'fake-uv');
+  if (mode === 'fake-ir') sim.textContent = 'fake IR · simulation, not infrared capture';
+  if (mode === 'fake-uv') sim.textContent = 'fake UV · simulation, not ultraviolet capture';
+}
+function computeFx() {
+  const mode = fInputs.mode.value;
+  if (mode === 'none' || !state.srcImageData) { fxState.active = false; return; }
+  const w = state.w, h = state.h;
+  const src = state.srcImageData.data;
+  const out = state.fxCtx.createImageData(w, h);
+  const o = out.data;
+  const amt = +fInputs.amt.value;
+  if (mode === 'stretch') {
+    // expand shadows: map [0, ceil] -> [0,255]; higher amt = stronger reveal
+    const ceil = Math.max(8, 255 - (amt/100) * (255 - 18));
+    const g = 255 / ceil;
+    for (let i = 0; i < src.length; i += 4) {
+      o[i] = Math.min(255, src[i]*g); o[i+1] = Math.min(255, src[i+1]*g); o[i+2] = Math.min(255, src[i+2]*g); o[i+3] = 255;
+    }
+  } else if (mode === 'threshold') {
+    const t = amt / 100 * 255;
+    for (let i = 0; i < src.length; i += 4) {
+      const l = luminance(src[i], src[i+1], src[i+2]);
+      const v = l >= t ? 255 : 0;
+      o[i] = o[i+1] = o[i+2] = v; o[i+3] = 255;
+    }
+  } else if (mode === 'posterize') {
+    const levels = Math.max(2, Math.round(2 + amt/100 * 6));
+    const step = 255 / (levels - 1);
+    for (let i = 0; i < src.length; i += 4) {
+      o[i] = Math.round(Math.round(src[i]/step)*step);
+      o[i+1] = Math.round(Math.round(src[i+1]/step)*step);
+      o[i+2] = Math.round(Math.round(src[i+2]/step)*step);
+      o[i+3] = 255;
+    }
+  } else if (mode === 'edges') {
+    sobel(src, o, w, h);
+  } else if (mode === 'chan-r' || mode === 'chan-g' || mode === 'chan-b') {
+    const off = mode === 'chan-r' ? 0 : mode === 'chan-g' ? 1 : 2;
+    for (let i = 0; i < src.length; i += 4) {
+      o[i] = o[i+1] = o[i+2] = src[i + off]; o[i+3] = 255;
+    }
+  } else if (mode === 'fake-ir') {
+    const k = amt / 100;
+    for (let i = 0; i < src.length; i += 4) {
+      const r = src[i], g = src[i+1], b = src[i+2];
+      // false-color IR look: vegetation/reds pop, channel rotate, warm bias
+      o[i]   = Math.min(255, g + (r) * 0.4 * k);
+      o[i+1] = Math.min(255, b * (1 - 0.3*k) + r * 0.2*k);
+      o[i+2] = Math.min(255, r * (1 - 0.5*k));
+      o[i+3] = 255;
+    }
+  } else if (mode === 'fake-uv') {
+    const k = amt / 100;
+    for (let i = 0; i < src.length; i += 4) {
+      const r = src[i], g = src[i+1], b = src[i+2];
+      const l = luminance(r,g,b);
+      // UV-fluorescence look: dark base, bright areas glow cool/violet
+      const glow = Math.max(0, l - 140) / 115;
+      o[i]   = Math.min(255, (b*0.5 + r*0.2) * (1-0.6*k) + glow*180*k);
+      o[i+1] = Math.min(255, (g*0.3) * (1-0.7*k) + glow*120*k);
+      o[i+2] = Math.min(255, (b*0.8 + 30) * (1-0.2*k) + glow*255*k);
+      o[i+3] = 255;
+    }
+  } else { fxState.active = false; return; }
+  state.fxCtx.putImageData(out, 0, 0);
+  fxState.active = true;
+}
+function sobel(src, o, w, h) {
+  // luminance buffer
+  const lum = new Float32Array(w * h);
+  for (let p = 0, i = 0; p < lum.length; p++, i += 4) lum[p] = luminance(src[i], src[i+1], src[i+2]);
+  const gx = [-1,0,1,-2,0,2,-1,0,1], gy = [-1,-2,-1,0,0,0,1,2,1];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let sx = 0, sy = 0, ki = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = Math.min(w-1, Math.max(0, x+dx)), yy = Math.min(h-1, Math.max(0, y+dy));
+        const lv = lum[yy*w+xx];
+        sx += lv * gx[ki]; sy += lv * gy[ki]; ki++;
+      }
+      const mag = Math.min(255, Math.hypot(sx, sy));
+      const oi = (y*w+x)*4;
+      o[oi] = o[oi+1] = o[oi+2] = mag; o[oi+3] = 255;
+    }
+  }
+}
+['brightness','contrast','saturate','hue','amt'].forEach(k => fInputs[k].addEventListener('input', applyFilters));
+['invert','gray'].forEach(k => fInputs[k].addEventListener('change', applyFilters));
+fInputs.mode.addEventListener('change', applyFilters);
+fInputs.mirror.addEventListener('change', render);
+document.getElementById('f-reset').addEventListener('click', () => resetFilters());
+function resetFilters(skipRender) {
+  fInputs.brightness.value = 100; fInputs.contrast.value = 100; fInputs.saturate.value = 100; fInputs.hue.value = 0;
+  fInputs.invert.checked = false; fInputs.gray.checked = false;
+  fInputs.mode.value = 'none'; fInputs.amt.value = 60; fInputs.mirror.value = 'none';
+  buildCssFilter(); fxState.active = false; updateModeUi();
+  if (!skipRender) render();
+}
+
+// ============================================================
+// ANALYSIS
+// ============================================================
+function analyzeSelection() {
+  const sel = state.selection;
+  if (!sel || !state.srcImageData) return;
+  const x = Math.round(sel.x), y = Math.round(sel.y);
+  const w = Math.max(1, Math.round(sel.w)), h = Math.max(1, Math.round(sel.h));
+  const data = state.srcCtx.getImageData(x, y, w, h).data;
+  const N = data.length / 4;
+
+  const Rh = new Array(64).fill(0), Gh = new Array(64).fill(0), Bh = new Array(64).fill(0), Hh = new Array(72).fill(0);
+  let rSum=0,gSum=0,bSum=0,sSum=0,vSum=0,hSin=0,hCos=0,sCount=0,lumSum=0,lumSum2=0,lMin=255,lMax=0;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i+1], b = data[i+2];
+    rSum+=r; gSum+=g; bSum+=b;
+    Rh[Math.min(63, r>>2)]++; Gh[Math.min(63, g>>2)]++; Bh[Math.min(63, b>>2)]++;
+    const [hu,sa,va] = rgbToHsv(r,g,b);
+    sSum+=sa; vSum+=va;
+    if (sa > 8) { Hh[Math.min(71, Math.floor(hu/5))]++; const rad = hu*Math.PI/180; hSin+=Math.sin(rad)*sa; hCos+=Math.cos(rad)*sa; sCount++; }
+    const lum = luminance(r,g,b);
+    lumSum+=lum; lumSum2+=lum*lum;
+    if (lum < lMin) lMin = lum; if (lum > lMax) lMax = lum;
+  }
+  const meanR=rSum/N, meanG=gSum/N, meanB=bSum/N, meanS=sSum/N, meanV=vSum/N;
+  const dominantHue = sCount>0 ? ((Math.atan2(hSin,hCos)*180/Math.PI)+360)%360 : 0;
+  const meanLum = lumSum/N, stdLum = Math.sqrt(Math.max(0, lumSum2/N - meanLum*meanLum));
+  const dom = kmeansColors(data, 8, 8);
+
+  renderSelectionInfo(sel, N);
+  renderStats({ meanR, meanG, meanB, meanS, meanV, meanLum, stdLum, dominantHue, lMin, lMax });
+  renderRgbHist(Rh, Gh, Bh);
+  renderHueWheel(Hh);
+  renderDominant(dom);
+  renderMatch(data);
+}
+function kmeansColors(data, k, iterations) {
+  const N = data.length / 4;
+  const step = Math.max(1, Math.floor(N / 8000));
+  const samples = [];
+  for (let i = 0; i < data.length; i += 4*step) samples.push([data[i], data[i+1], data[i+2]]);
+  if (samples.length === 0) return [];
+  let centroids = [];
+  for (let i = 0; i < k; i++) centroids.push(samples[Math.floor(i*samples.length/k)].slice());
+  let assign = new Array(samples.length).fill(0);
+  for (let it = 0; it < iterations; it++) {
+    for (let i = 0; i < samples.length; i++) {
+      let bi=0, bd=Infinity; const p = samples[i];
+      for (let c = 0; c < k; c++) { const cc = centroids[c]; const d = (p[0]-cc[0])**2+(p[1]-cc[1])**2+(p[2]-cc[2])**2; if (d<bd){bd=d;bi=c;} }
+      assign[i] = bi;
+    }
+    const sums = Array.from({length:k}, () => [0,0,0,0]);
+    for (let i = 0; i < samples.length; i++) { const a=assign[i], p=samples[i]; sums[a][0]+=p[0]; sums[a][1]+=p[1]; sums[a][2]+=p[2]; sums[a][3]++; }
+    for (let c = 0; c < k; c++) if (sums[c][3]>0) centroids[c] = [sums[c][0]/sums[c][3], sums[c][1]/sums[c][3], sums[c][2]/sums[c][3]];
+  }
+  const sizes = new Array(k).fill(0);
+  for (let i = 0; i < assign.length; i++) sizes[assign[i]]++;
+  return centroids.map((c,i) => ({ rgb:[Math.round(c[0]),Math.round(c[1]),Math.round(c[2])], hex:rgbToHex(c[0],c[1],c[2]), pct:sizes[i]/samples.length }))
+    .filter(c => c.pct > 0).sort((a,b)=>b.pct-a.pct);
+}
+
+// ============================================================
+// RENDERERS (analysis sidebar)
+// ============================================================
+function renderSelectionInfo(sel, N) {
+  document.getElementById('sel-empty').style.display = 'none';
+  const el = document.getElementById('sel-info'); el.style.display = '';
+  const sf = state.origW / state.w;
+  el.innerHTML = `
+    <span class="k">source xy</span><span class="v">${Math.round(sel.x*sf)}, ${Math.round(sel.y*sf)}</span>
+    <span class="k">source wh</span><span class="v">${Math.round(sel.w*sf)} × ${Math.round(sel.h*sf)}</span>
+    <span class="k">norm xy</span><span class="v">${(sel.x/state.w).toFixed(3)}, ${(sel.y/state.h).toFixed(3)}</span>
+    <span class="k">norm wh</span><span class="v">${(sel.w/state.w).toFixed(3)} × ${(sel.h/state.h).toFixed(3)}</span>
+    <span class="k">samples</span><span class="v">${N.toLocaleString()} px</span>`;
+}
+function renderStats(s) {
+  document.getElementById('stats-empty').style.display = 'none';
+  const grid = document.getElementById('stats-grid'); grid.style.display = '';
+  const meanHex = rgbToHex(s.meanR, s.meanG, s.meanB);
+  grid.innerHTML = `
+    <div class="stat-cell"><div class="lbl">Mean RGB</div><div class="val"><span class="chip" style="background:${meanHex}"></span>${meanHex}</div></div>
+    <div class="stat-cell"><div class="lbl">Mean HSV</div><div class="val">${Math.round(s.dominantHue)}° ${Math.round(s.meanS)}% ${Math.round(s.meanV)}%</div></div>
+    <div class="stat-cell"><div class="lbl">Luminance</div><div class="val">${s.meanLum.toFixed(1)} ± ${s.stdLum.toFixed(1)}</div></div>
+    <div class="stat-cell"><div class="lbl">Lum range</div><div class="val">${Math.round(s.lMin)} – ${Math.round(s.lMax)}</div></div>
+    <div class="stat-cell"><div class="lbl">Dominant hue</div><div class="val">${Math.round(s.dominantHue)}° ${hueName(s.dominantHue)}</div></div>
+    <div class="stat-cell"><div class="lbl">Saturation</div><div class="val">${Math.round(s.meanS)}% mean</div></div>`;
+}
+function renderRgbHist(R, G, B) {
+  const svg = document.getElementById('rgb-hist');
+  const bins = R.length, maxV = Math.max(Math.max(...R), Math.max(...G), Math.max(...B), 1), barW = 256/bins;
+  function pathFor(hist, color, opacity) {
+    let d = `M 0 100 `;
+    for (let i = 0; i < bins; i++) { const x = i*barW, yh = (hist[i]/maxV)*100; d += `L ${x} ${100-yh} L ${x+barW} ${100-yh} `; }
+    d += `L 256 100 Z`;
+    return `<path d="${d}" fill="${color}" fill-opacity="${opacity}"/>`;
+  }
+  svg.innerHTML = pathFor(R,'var(--r)',0.4) + pathFor(G,'var(--g)',0.4) + pathFor(B,'var(--b)',0.4);
+}
+function renderHueWheel(Hh) {
+  const svg = document.getElementById('hue-wheel');
+  const bins = Hh.length, maxV = Math.max(...Hh, 1), innerR = 30, maxBarR = 100;
+  let html = `<circle r="${innerR}" fill="none" stroke="var(--border-strong)" stroke-width="1" opacity="0.5"/>`;
+  for (let i = 0; i < bins; i++) {
+    const a0 = (i/bins)*360 - 90, a1 = ((i+1)/bins)*360 - 90;
+    const r = innerR + (Hh[i]/maxV)*(maxBarR-innerR);
+    const r0 = a0*Math.PI/180, r1 = a1*Math.PI/180;
+    const x0 = innerR*Math.cos(r0), y0 = innerR*Math.sin(r0);
+    const x1 = r*Math.cos(r0), y1 = r*Math.sin(r0);
+    const x2 = r*Math.cos(r1), y2 = r*Math.sin(r1);
+    const x3 = innerR*Math.cos(r1), y3 = innerR*Math.sin(r1);
+    const midHue = ((i+0.5)/bins)*360;
+    html += `<path d="M ${x0} ${y0} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 0 0 ${x0} ${y0} Z" fill="hsl(${midHue} 70% 55%)" opacity="0.85"/>`;
+  }
+  ['0','90','180','270'].forEach(deg => {
+    const a = (parseInt(deg)-90)*Math.PI/180, x = (maxBarR+8)*Math.cos(a), y = (maxBarR+8)*Math.sin(a);
+    html += `<text x="${x}" y="${y+3}" text-anchor="middle" fill="var(--muted)" font-family="ui-monospace, monospace" font-size="8">${deg}°</text>`;
+  });
+  svg.innerHTML = html;
+}
+function renderDominant(dom) {
+  const grid = document.getElementById('dom-grid'); grid.innerHTML = '';
+  dom.slice(0,8).forEach(c => {
+    const cell = document.createElement('div');
+    cell.className = 'dom-cell';
+    cell.title = `${c.hex} (${(c.pct*100).toFixed(1)}%) - click to copy`;
+    cell.innerHTML = `<div class="swatch-block" style="background:${c.hex}"></div>
+      <div class="swatch-meta"><span class="hex">${c.hex}</span><span class="pct">${(c.pct*100).toFixed(0)}%</span></div>`;
+    cell.addEventListener('click', () => { copyText(c.hex); flash(cell); });
+    grid.appendChild(cell);
+  });
+  document.getElementById('dom-count').textContent = `k=${Math.min(8,dom.length)}`;
+}
+function renderMatch(data) {
+  const section = document.getElementById('match-section');
+  if (!state.palette || !state.palette.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const pal = state.palette;
+  const counts = new Array(pal.length).fill(0);
+  const N = data.length / 4;
+  const step = Math.max(1, Math.floor(N / 20000));
+  let total = 0;
+  for (let i = 0; i < data.length; i += 4*step) {
+    const r = data[i], g = data[i+1], b = data[i+2];
+    let bi = 0, bd = Infinity;
+    for (let c = 0; c < pal.length; c++) { const cc = pal[c].rgb; const d = (r-cc[0])**2+(g-cc[1])**2+(b-cc[2])**2; if (d<bd){bd=d;bi=c;} }
+    counts[bi]++; total++;
+  }
+  const rows = pal.map((p,i) => ({ p, pct: total ? counts[i]/total : 0 })).filter(r => r.pct > 0.001).sort((a,b)=>b.pct-a.pct);
+  const list = document.getElementById('match-list');
+  list.innerHTML = rows.map(r => `
+    <div class="match-row">
+      <span class="chip" style="background:${r.p.hex}"></span>
+      <div class="bar-wrap"><div class="bar" style="width:${(r.pct*100).toFixed(1)}%;background:${r.p.hex}"></div><span class="barlabel">${escapeHtml(r.p.name)}</span></div>
+      <span class="pct">${(r.pct*100).toFixed(1)}%</span>
+    </div>`).join('');
+}
+
+// ============================================================
+// IMAGE PALETTE (whole image)
+// ============================================================
+document.getElementById('pal-extract').addEventListener('click', extractPalette);
+document.getElementById('palette-btn').addEventListener('click', () => { extractPalette(); document.querySelector('.analysis-pane').scrollTop = 0; });
+function extractPalette() {
+  if (!state.srcImageData) { toast('No pixel data to sample'); return; }
+  const dom = kmeansColors(state.srcImageData.data, 12, 10);
+  state.palette = dom.map((c, i) => ({ name: 'Color ' + (i+1), hex: c.hex, rgb: c.rgb, pct: c.pct }));
+  renderPalette();
+  if (state.selection) analyzeSelection();
+  toast('Extracted ' + state.palette.length + '-color palette');
+}
+function renderPalette() {
+  const grid = document.getElementById('palette-grid');
+  document.getElementById('pal-empty').style.display = 'none';
+  grid.style.display = '';
+  document.getElementById('pal-count').textContent = state.palette.length + ' colors';
+  grid.innerHTML = '';
+  state.palette.forEach((p, idx) => {
+    const cell = document.createElement('div');
+    cell.className = 'pal-cell';
+    cell.innerHTML = `<div class="pal-sw" style="background:${p.hex}" title="${p.hex} - click to copy"></div>
+      <input class="pal-name" value="${escapeHtml(p.name)}" spellcheck="false">
+      <div class="pal-meta"><span class="hex">${p.hex}</span><span>${(p.pct*100).toFixed(0)}%</span></div>`;
+    cell.querySelector('.pal-sw').addEventListener('click', () => { copyText(p.hex); flash(cell); });
+    cell.querySelector('.pal-name').addEventListener('input', (e) => { state.palette[idx].name = e.target.value; });
+    cell.querySelector('.pal-name').addEventListener('change', () => { if (state.selection) renderMatch(state.srcCtx.getImageData(Math.round(state.selection.x),Math.round(state.selection.y),Math.max(1,Math.round(state.selection.w)),Math.max(1,Math.round(state.selection.h))).data); });
+    grid.appendChild(cell);
+  });
+}
+function resetPalette() {
+  state.palette = null;
+  document.getElementById('palette-grid').style.display = 'none';
+  document.getElementById('palette-grid').innerHTML = '';
+  document.getElementById('pal-empty').style.display = '';
+  document.getElementById('pal-count').textContent = '';
+  document.getElementById('match-section').style.display = 'none';
+}
+
+// ============================================================
+// PANEL RESET
+// ============================================================
+function resetPanel() {
+  document.getElementById('sel-empty').style.display = '';
+  document.getElementById('sel-info').style.display = 'none';
+  document.getElementById('stats-empty').style.display = '';
+  document.getElementById('stats-grid').style.display = 'none';
+  document.getElementById('rgb-hist').innerHTML = '';
+  document.getElementById('hue-wheel').innerHTML = '';
+  document.getElementById('dom-grid').innerHTML = '<div class="empty-state" style="grid-column:1/-1; padding:8px">No selection yet.</div>';
+  document.getElementById('match-section').style.display = 'none';
+}
+
+// ============================================================
+// TOOLBAR ACTIONS
+// ============================================================
+document.getElementById('btn-whole').addEventListener('click', () => {
+  if (!state.src) return;
+  state.selection = { x: 0, y: 0, w: state.w, h: state.h };
+  document.getElementById('btn-add').disabled = false;
+  render(); analyzeSelection();
+});
+document.getElementById('btn-clear').addEventListener('click', () => {
+  state.selection = null; state.measure = null;
+  document.getElementById('btn-add').disabled = true;
+  render(); resetPanel();
+});
+document.getElementById('btn-add').addEventListener('click', saveRegion);
+document.getElementById('compare-clear').addEventListener('click', () => { state.regions = []; state.regionCounter = 0; renderCompare(); render(); });
+
+// ============================================================
+// SAVED REGIONS / COMPARE
+// ============================================================
+function saveRegion() {
+  if (!state.selection || !state.srcImageData) return;
+  const sel = state.selection;
+  const x = Math.round(sel.x), y = Math.round(sel.y), w = Math.max(1,Math.round(sel.w)), h = Math.max(1,Math.round(sel.h));
+  const tw = 240, th = Math.max(40, Math.round(240 * h / w));
+  const tmp = document.createElement('canvas'); tmp.width = tw; tmp.height = th;
+  tmp.getContext('2d').drawImage(state.src, x, y, w, h, 0, 0, tw, th);
+  const thumb = tmp.toDataURL('image/jpeg', 0.85);
+  const data = state.srcCtx.getImageData(x, y, w, h).data;
+  const dom = kmeansColors(data, 6, 6);
+  let rSum=0,gSum=0,bSum=0; for (let i=0;i<data.length;i+=4){rSum+=data[i];gSum+=data[i+1];bSum+=data[i+2];}
+  const N = data.length/4;
+  state.regions.push({
+    id: Date.now()+Math.random(),
+    label: 'Region ' + (++state.regionCounter),
+    x, y, w, h,
+    norm: [x/state.w, y/state.h, (x+w)/state.w, (y+h)/state.h],
+    thumb, dimensions: `${Math.round(w*state.origW/state.w)}×${Math.round(h*state.origH/state.h)}`,
+    meanHex: rgbToHex(rSum/N,gSum/N,bSum/N), dom,
+  });
+  renderCompare(); render();
+}
+function renderCompare() {
+  const strip = document.getElementById('compare-strip');
+  const body = document.getElementById('compare-body');
+  document.getElementById('compare-count').textContent = state.regions.length;
+  if (state.regions.length === 0) {
+    body.innerHTML = '<div class="compare-empty">Sample a region, then click "Save region" to stack regions here side by side. Saved regions also feed the Export panel.</div>';
+    return;
+  }
+  body.innerHTML = '';
+  state.regions.forEach(c => {
+    const card = document.createElement('div'); card.className = 'compare-card';
+    const swatches = c.dom.slice(0,6).map(s => `<div style="background:${s.hex}" title="${s.hex} (${(s.pct*100).toFixed(0)}%)"></div>`).join('');
+    card.innerHTML = `
+      <div class="cc-head"><input class="cc-name" value="${escapeHtml(c.label)}" spellcheck="false"><button class="cc-close" title="Remove">&times;</button></div>
+      <div class="cc-thumb" style="background-image:url('${c.thumb}')" title="Jump to region"></div>
+      <div class="cc-swatches">${swatches}</div>
+      <div class="cc-meta"><span class="v">${c.dimensions}</span> px · mean <span class="v">${c.meanHex}</span></div>`;
+    card.querySelector('.cc-name').addEventListener('input', (e) => { c.label = e.target.value; render(); });
+    card.querySelector('.cc-close').addEventListener('click', () => { state.regions = state.regions.filter(x => x.id !== c.id); renderCompare(); render(); });
+    card.querySelector('.cc-thumb').addEventListener('click', () => { jumpToRegion(c); });
+    body.appendChild(card);
+  });
+}
+function jumpToRegion(c) {
+  const { w: vw, h: vh } = vpSize();
+  const pad = 40;
+  const s = clampScale(Math.min((vw-pad)/c.w, (vh-pad)/c.h));
+  state.view.scale = s;
+  const cx = c.x + c.w/2, cy = c.y + c.h/2;
+  state.view.tx = vw/2 - cx*s; state.view.ty = vh/2 - cy*s;
+  clampPan();
+  state.selection = { x: c.x, y: c.y, w: c.w, h: c.h };
+  document.getElementById('btn-add').disabled = false;
+  render(); analyzeSelection();
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+const exportModal = document.getElementById('export-modal');
+let exportTab = 'css';
+document.getElementById('export-btn').addEventListener('click', () => { exportModal.classList.add('show'); buildExport(); });
+document.getElementById('export-close').addEventListener('click', () => exportModal.classList.remove('show'));
+exportModal.addEventListener('click', (e) => { if (e.target === exportModal) exportModal.classList.remove('show'); });
+document.getElementById('export-tabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  exportTab = b.dataset.tab;
+  document.querySelectorAll('#export-tabs button').forEach(x => x.classList.toggle('active', x === b));
+  buildExport();
+});
+function buildExport() {
+  const hint = document.getElementById('export-hint');
+  const ta = document.getElementById('export-text');
+  const pal = state.palette || [];
+  if (exportTab === 'css') {
+    hint.textContent = pal.length ? 'CSS custom properties for the extracted palette. Extract a palette first if this is empty.' : 'No palette yet. Click "extract" in the Image palette panel.';
+    let out = ':root {\n';
+    pal.forEach((p,i) => { out += `  --c-${i+1}: ${p.hex}; /* ${p.name} ${(p.pct*100).toFixed(0)}% */\n`; });
+    pal.forEach((p) => { out += `  --${slugify(p.name)}: ${p.hex};\n`; });
+    out += '}';
+    ta.value = pal.length ? out : '';
+  } else if (exportTab === 'json') {
+    hint.textContent = 'Palette as JSON (name, hex, rgb, coverage).';
+    ta.value = pal.length ? JSON.stringify(pal.map(p => ({ name: p.name, hex: p.hex, rgb: p.rgb, pct: +p.pct.toFixed(4) })), null, 2) : '';
+  } else {
+    hint.textContent = 'painting.json skeleton for the ArtScope engine. Palette -> pigments[], saved regions -> hotspots[] (normalized coords). Fill in the prose fields, then run the engine scripts.';
+    ta.value = JSON.stringify(buildPaintingJson(), null, 2);
+  }
+}
+function buildPaintingJson() {
+  const id = slugify(state.filename.replace(/\.[a-z0-9]+$/i, ''));
+  const pal = state.palette || [];
+  return {
+    id,
+    site_name: 'ChromaScope',
+    site_tagline: 'analysis',
+    painting: {
+      title: state.filename.replace(/\.[a-z0-9]+$/i, ''),
+      title_native: '', artist: '', date_start: '', date_end: '',
+      location: '', dimensions_cm: [0, 0], technique: '', current_state: '',
+    },
+    scan: {
+      url: `assets/${id}.dzi`, fallback_url: `assets/${id}_full.jpg`,
+      width: state.origW, height: state.origH, source: '',
+    },
+    measurements: { pixel_count: state.origW * state.origH },
+    pigments: pal.map(p => ({
+      name: p.name, hex: p.hex, comment: '',
+      sample_region_pct: [0, 0, 0, 0], hue_range: null, historical: '',
+    })),
+    themes: {
+      dark: { name: 'Dark', subtitle: '', is_default: true },
+      light: { name: 'Light', subtitle: '', is_default: false },
+    },
+    hotspots: state.regions.map(r => ({
+      id: slugify(r.label),
+      name: r.label,
+      region: r.norm.map(v => +v.toFixed(4)),
+      summary: '',
+    })),
+  };
+}
+document.getElementById('export-copy').addEventListener('click', () => {
+  const ta = document.getElementById('export-text');
+  if (!ta.value) { toast('Nothing to copy'); return; }
+  copyText(ta.value); toast('Copied to clipboard');
+});
+document.getElementById('export-download').addEventListener('click', () => {
+  const ta = document.getElementById('export-text');
+  if (!ta.value) { toast('Nothing to download'); return; }
+  const id = slugify(state.filename.replace(/\.[a-z0-9]+$/i, ''));
+  const names = { css: id + '-palette.css', json: id + '-palette.json', painting: 'painting.json' };
+  const blob = new Blob([ta.value], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = names[exportTab]; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('Downloaded ' + names[exportTab]);
+});
+
+// ============================================================
+// HELPERS
+// ============================================================
+function escapeHtml(s) { return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function copyText(t) { try { navigator.clipboard.writeText(t); } catch(e) { const ta = document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(_){} ta.remove(); } }
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
+}
+function flash(el) { el.style.outline = '2px solid var(--accent)'; setTimeout(() => el.style.outline = '', 500); }
+
+// ============================================================
+// KEYBOARD
+// ============================================================
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space' && !spaceDown) { spaceDown = true; viewport.classList.add('spacepan'); e.preventDefault(); return; }
+  if (!state.src) return;
+  switch (e.key.toLowerCase()) {
+    case 'v': setTool('select'); break;
+    case 'h': setTool('pan'); break;
+    case 'i': setTool('inspect'); break;
+    case 'm': setTool('measure'); break;
+    case 'p': setTool('pick'); break;
+    case '+': case '=': zoomBy(1.4); break;
+    case '-': case '_': zoomBy(1/1.4); break;
+    case '0': fitView(); render(); break;
+    case '1': setActual(); break;
+    case 'escape': state.selection = null; state.measure = null; document.getElementById('btn-add').disabled = true; render(); resetPanel(); break;
+    case 'e': if (state.palette) { document.getElementById('export-btn').click(); } break;
+  }
+});
+window.addEventListener('keyup', (e) => { if (e.code === 'Space') { spaceDown = false; viewport.classList.remove('spacepan'); } });
+
+// ============================================================
+// RESIZE
+// ============================================================
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  if (!state.src) return;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { resizeCanvases(); clampPan(); render(); }, 100);
+});
+
+setTool('select');
+booted = true;
+</script>
+
+</body>
+</html>
