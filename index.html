@@ -2,6 +2,9 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChromaScope</title>
 <style>
@@ -53,7 +56,7 @@ body {
   overflow: hidden;
 }
 button, input, select { font-family: inherit; font-size: inherit; color: inherit; }
-.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.mono { font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
 
 /* topbar */
 .topbar {
@@ -72,7 +75,7 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
   letter-spacing: 0.02em;
   font-size: 13px;
   color: var(--fg-strong);
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   white-space: nowrap;
 }
 .brand small {
@@ -82,7 +85,7 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
   font-size: 11px;
 }
 .topbar .filename {
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   color: var(--muted);
   margin-left: 12px;
@@ -117,73 +120,110 @@ button, input, select { font-family: inherit; font-size: inherit; color: inherit
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 32px;
+  gap: 0;
   background: var(--bg);
   z-index: 5;
 }
 .empty-pane.hidden { display: none; }
-.empty-pane h1 {
-  font-size: 40px;
-  font-weight: 200;
-  letter-spacing: -0.02em;
-  color: var(--fg-strong);
-  margin: 0 0 4px;
-}
-.empty-pane .sub {
-  font-size: 13px;
-  font-family: ui-monospace, monospace;
-  color: var(--muted);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 28px;
-}
-.empty-pane p {
-  font-size: 14px;
-  color: var(--muted-strong);
-  margin: 4px 0;
-  max-width: 560px;
-  line-height: 1.55;
-}
-.empty-pane .feat {
-  margin-top: 22px;
-  display: flex;
-  gap: 8px 22px;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 620px;
-  font-family: ui-monospace, monospace;
-  font-size: 11px;
-  color: var(--muted);
-}
-.empty-pane .feat span { white-space: nowrap; }
-.empty-pane .feat b { color: var(--accent); font-weight: 600; }
-.empty-pane .load-row { margin-top: 28px; display: flex; gap: 10px; }
-.empty-pane .load-btn-big { padding: 12px 28px; font-size: 14px; }
-.empty-pane .keys {
-  margin-top: 20px;
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
-  color: var(--muted);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-}
-kbd {
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  padding: 1px 6px;
-  color: var(--fg);
-  font-size: 11px;
-  border-radius: 2px;
-  font-family: ui-monospace, monospace;
-}
 .empty-pane.drop-active {
   background: var(--surface);
   outline: 2px dashed var(--accent);
   outline-offset: -16px;
 }
+.empty-logo {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--fg-strong);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  margin-bottom: 3px;
+}
+.empty-sub {
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  margin-bottom: 28px;
+}
+.empty-actions { display: flex; gap: 8px; margin-bottom: 18px; }
+.empty-actions .btn { padding: 8px 22px; font-size: 13px; letter-spacing: .04em; }
+.empty-hints {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .04em;
+  margin-bottom: 24px;
+}
+.empty-footer {
+  font-size: 9.5px;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .05em;
+  opacity: .55;
+}
+.empty-footer a { color: inherit; text-decoration: none; }
+.empty-footer a:hover { color: var(--fg); }
+kbd {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  padding: 1px 5px;
+  color: var(--fg);
+  font-size: 10px;
+  border-radius: 2px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* about modal */
+.about-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity .15s;
+}
+.about-overlay.open { opacity: 1; pointer-events: all; }
+.about-box {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  width: 360px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--fg);
+}
+.about-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px 9px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.about-close {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 16px; line-height: 1; padding: 0;
+  font-family: inherit;
+}
+.about-close:hover { color: var(--fg); }
+.about-body { padding: 14px; }
+.about-row {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 2px 16px; align-items: baseline;
+  padding: 2px 0;
+}
+.about-row .lbl { color: var(--fg); }
+.about-row .key { color: var(--muted); text-align: right; letter-spacing: .04em; }
+.about-divider {
+  border: none; border-top: 1px solid var(--border);
+  margin: 10px 0;
+}
+.about-links {
+  display: flex; gap: 14px; margin-top: 12px;
+  font-size: 10.5px; color: var(--muted);
+}
+.about-links a { color: var(--muted); text-decoration: none; letter-spacing: .04em; }
+.about-links a:hover { color: var(--accent); }
+.about-note { color: var(--muted); font-size: 10px; margin-top: 10px; opacity: .7; }
 
 /* main app */
 .app {
@@ -250,6 +290,13 @@ kbd {
 .viewport.tool-inspect { cursor: crosshair; }
 .viewport.tool-measure { cursor: crosshair; }
 .viewport.tool-pick { cursor: crosshair; }
+.viewport.geo-tool-pan    { cursor: grab; }
+.viewport.geo-tool-select { cursor: default; }
+.viewport.geo-tool-move   { cursor: move; }
+.viewport.geo-tool-line,
+.viewport.geo-tool-angle,
+.viewport.geo-tool-poly   { cursor: crosshair; }
+.viewport.geo-dragging    { cursor: grabbing; }
 .viewport.spacepan { cursor: grab; }
 #view-canvas, #overlay-canvas {
   position: absolute; inset: 0;
@@ -265,7 +312,7 @@ kbd {
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   border: 1px solid var(--border-strong);
   padding: 8px 10px;
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   color: var(--fg);
   display: grid;
@@ -293,7 +340,7 @@ kbd {
   background: color-mix(in srgb, var(--warn) 22%, var(--bg));
   border: 1px solid var(--warn);
   color: var(--warn);
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -330,7 +377,7 @@ kbd {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 10px;
 }
 .filter label {
@@ -350,7 +397,7 @@ kbd {
 }
 .filter .v { color: var(--fg); font-size: 10px; min-width: 30px; text-align: right; }
 .filters .grp-label {
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -370,7 +417,7 @@ kbd {
   flex-wrap: wrap;
 }
 .canvas-toolbar .zoomval {
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
   color: var(--fg-strong);
   min-width: 52px;
@@ -378,7 +425,7 @@ kbd {
 }
 .canvas-toolbar .meta {
   margin-left: auto;
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 10px;
   color: var(--muted);
 }
@@ -390,37 +437,38 @@ kbd {
   overflow-y: auto;
 }
 .an-section {
-  padding: 13px 14px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
 }
 .an-section:last-child { border-bottom: none; }
 .an-section h3 {
-  margin: 0 0 10px;
-  font-size: 10px;
+  margin: 0 0 8px;
+  font-size: 9.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
   font-weight: 500;
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
 }
-.an-section h3 .count { color: var(--muted-strong); font-weight: 400; }
+.an-section h3 .count { color: var(--muted-strong); font-weight: 400; font-size: 8.5px; }
 .an-section h3 .mini-btn {
   background: transparent; border: 1px solid var(--border-strong);
   color: var(--muted-strong); font-size: 9px; padding: 2px 7px; cursor: pointer;
-  letter-spacing: 0.06em; text-transform: uppercase;
+  letter-spacing: 0.06em; text-transform: uppercase; font-family: "IBM Plex Mono", ui-monospace, monospace;
 }
 .an-section h3 .mini-btn:hover { color: var(--fg-strong); border-color: var(--fg); }
-.empty-state { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.empty-state { color: var(--muted); font-size: 10.5px; line-height: 1.4; }
+.an-section-muted { opacity: .6; }
 
 .sel-info {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 3px 14px;
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
 }
 .sel-info .k { color: var(--accent); }
@@ -436,7 +484,7 @@ kbd {
 .stat-cell {
   background: var(--surface);
   padding: 8px 10px;
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 11px;
 }
 .stat-cell .lbl {
@@ -457,7 +505,7 @@ kbd {
 }
 .hist-legend {
   display: flex; gap: 12px; margin-top: 4px;
-  font-family: ui-monospace, monospace; font-size: 10px; color: var(--muted);
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; color: var(--muted);
 }
 .hist-legend .sw { display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; }
 
@@ -470,7 +518,7 @@ kbd {
 .dom-cell { background: var(--surface); cursor: pointer; transition: transform 0.15s; }
 .dom-cell:hover { transform: scale(1.04); position: relative; z-index: 2; }
 .dom-cell .swatch-block { width: 100%; aspect-ratio: 1.3 / 1; }
-.dom-cell .swatch-meta { padding: 5px 7px; font-family: ui-monospace, monospace; font-size: 9px; border-top: 1px solid var(--border); }
+.dom-cell .swatch-meta { padding: 5px 7px; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; border-top: 1px solid var(--border); }
 .dom-cell .swatch-meta .hex { color: var(--fg-strong); }
 .dom-cell .swatch-meta .pct { color: var(--muted); float: right; }
 
@@ -484,19 +532,19 @@ kbd {
 .pal-cell .pal-name {
   width: 100%; background: transparent; border: none;
   border-top: 1px solid var(--border);
-  color: var(--fg-strong); font-family: ui-monospace, monospace; font-size: 9px;
+  color: var(--fg-strong); font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px;
   padding: 4px 5px 1px;
 }
 .pal-cell .pal-name:focus { outline: 1px solid var(--accent); }
 .pal-cell .pal-meta {
-  padding: 0 5px 4px; font-family: ui-monospace, monospace; font-size: 8px; color: var(--muted);
+  padding: 0 5px 4px; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 8px; color: var(--muted);
   display: flex; justify-content: space-between;
 }
 .pal-cell .pal-meta .hex { color: var(--muted-strong); }
 
 /* palette match bars */
 .match-list { display: flex; flex-direction: column; gap: 4px; }
-.match-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: center; font-family: ui-monospace, monospace; font-size: 10px; }
+.match-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: center; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; }
 .match-row .chip { width: 12px; height: 12px; border: 1px solid var(--border-strong); }
 .match-row .bar-wrap { background: var(--surface); border: 1px solid var(--border); height: 12px; position: relative; }
 .match-row .bar { height: 100%; }
@@ -514,7 +562,7 @@ kbd {
 .compare-header {
   padding: 8px 14px;
   border-right: 1px solid var(--border);
-  font-family: ui-monospace, monospace;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
   color: var(--muted);
   display: flex; align-items: center; gap: 12px;
@@ -532,7 +580,7 @@ kbd {
 .compare-card .cc-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 .compare-card .cc-name {
   font-size: 12px; color: var(--fg-strong); font-weight: 500;
-  font-family: ui-monospace, monospace; background: transparent; border: none;
+  font-family: "IBM Plex Mono", ui-monospace, monospace; background: transparent; border: none;
   border-bottom: 1px solid transparent; padding: 1px 0; flex: 1; min-width: 0;
 }
 .compare-card .cc-name:focus { outline: none; border-bottom-color: var(--accent); }
@@ -544,7 +592,7 @@ kbd {
 }
 .compare-card .cc-swatches { display: flex; gap: 1px; height: 16px; }
 .compare-card .cc-swatches > div { flex: 1; }
-.compare-card .cc-meta { font-family: ui-monospace, monospace; font-size: 9px; color: var(--muted); line-height: 1.5; }
+.compare-card .cc-meta { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; color: var(--muted); line-height: 1.5; }
 .compare-card .cc-meta .v { color: var(--fg); }
 
 /* modal */
@@ -558,20 +606,20 @@ kbd {
   width: min(720px, 100%); max-height: 86vh; display: flex; flex-direction: column;
 }
 .modal-head { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
-.modal-head h2 { margin: 0; font-size: 14px; font-family: ui-monospace, monospace; color: var(--fg-strong); letter-spacing: 0.02em; }
+.modal-head h2 { margin: 0; font-size: 14px; font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--fg-strong); letter-spacing: 0.02em; }
 .modal-head .close { margin-left: auto; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
 .modal-head .close:hover { color: var(--fg-strong); }
 .modal-tabs { display: flex; gap: 4px; padding: 10px 16px 0; }
 .modal-tabs button {
   background: transparent; border: 1px solid var(--border); border-bottom: none;
-  color: var(--muted); padding: 6px 14px; cursor: pointer; font-size: 12px; font-family: ui-monospace, monospace;
+  color: var(--muted); padding: 6px 14px; cursor: pointer; font-size: 12px; font-family: "IBM Plex Mono", ui-monospace, monospace;
 }
 .modal-tabs button.active { color: var(--fg-strong); background: var(--surface); border-color: var(--border-strong); }
 .modal-body { padding: 14px 16px; overflow: auto; }
 .modal-body .hint { color: var(--muted); font-size: 12px; margin: 0 0 10px; line-height: 1.5; }
 .modal-body textarea {
   width: 100%; min-height: 300px; background: var(--surface); border: 1px solid var(--border);
-  color: var(--fg); font-family: ui-monospace, monospace; font-size: 11px; padding: 10px; resize: vertical; line-height: 1.5;
+  color: var(--fg); font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; padding: 10px; resize: vertical; line-height: 1.5;
 }
 .modal-foot { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
 
@@ -579,10 +627,175 @@ kbd {
 .toast {
   position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(20px);
   background: var(--fg-strong); color: var(--bg);
-  font-family: ui-monospace, monospace; font-size: 12px; padding: 8px 16px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; padding: 8px 16px;
   opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 60;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ============================================================ */
+/* GEO MODE                                                      */
+/* ============================================================ */
+.btn.geo-toggle { font-family: "IBM Plex Mono", ui-monospace, monospace; letter-spacing: 0.08em; }
+.btn.geo-toggle.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+/* geo overlay: full-viewport SVG, all rendering in screen-space coordinates */
+#geo-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: none;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 10;
+}
+#geo-overlay.geo-draw { pointer-events: all; }
+
+/* geo panel */
+#geo-panel {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.geo-toolbar-row {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.geo-tool-btn {
+  background: var(--surface-alt);
+  border: 1px solid var(--border-strong);
+  color: var(--muted-strong);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  padding: 5px 8px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.geo-tool-btn:hover { color: var(--fg-strong); border-color: var(--fg); }
+.geo-tool-btn.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+.geo-modes-row {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.geo-mode-btn {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--muted);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 9px;
+  padding: 4px 8px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.geo-mode-btn:hover { color: var(--fg-strong); border-color: var(--fg); }
+.geo-mode-btn.active { background: var(--surface-alt); color: var(--fg-strong); border-color: var(--border-strong); }
+.geo-mode-btn.active::before { content: '● '; }
+
+.geo-meas-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+.geo-meas-empty {
+  color: var(--muted);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 4px 0;
+}
+.geo-meas-item {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-bottom: 4px;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+.geo-meas-item:hover { border-color: var(--border-strong); }
+.geo-meas-item.selected { border-color: var(--accent); }
+.geo-meas-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+.geo-meas-swatch {
+  width: 10px; height: 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+.geo-meas-type {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-strong);
+  text-transform: uppercase;
+  flex: 1;
+}
+.geo-meas-del {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.geo-meas-del:hover { color: var(--danger); }
+.geo-meas-data {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--muted-strong);
+  line-height: 1.5;
+}
+.geo-hint {
+  padding: 6px 10px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  min-height: 26px;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+.geo-actions-row {
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.geo-calib-row {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+.geo-calib-row input[type=number] {
+  width: 60px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--fg);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  padding: 3px 5px;
+}
+.geo-calib-row label { color: var(--muted); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -595,30 +808,51 @@ kbd {
   <button class="btn" id="load-btn">Load</button>
   <button class="btn ghost" id="palette-btn" disabled>Palette</button>
   <button class="btn ghost" id="export-btn" disabled>Export</button>
+  <button class="btn ghost geo-toggle" id="geo-toggle" title="Geometry mode">Geometry</button>
+  <button class="btn ghost icon" id="about-btn" title="About / shortcuts">?</button>
   <button class="btn ghost icon" id="theme-toggle" title="Toggle theme">&#9679;</button>
 </header>
 
 <div class="empty-pane" id="empty-pane">
-  <h1>ChromaScope</h1>
-  <div class="sub">forensic color lab</div>
-  <p>Drop in any painting, scan, photo, or screenshot. Pan and zoom into it, read pixel values live, drag-select regions for full color statistics, and run forensic filters to test "hidden detail" claims yourself.</p>
-  <div class="feat">
-    <span><b>zoom</b> deep-zoom + minimap</span>
-    <span><b>inspect</b> live RGB / HSV readout</span>
-    <span><b>measure</b> pixel distance</span>
-    <span><b>analyze</b> histograms, hue wheel, k-means</span>
-    <span><b>forensic</b> shadow-stretch, edges, mirror, fake-IR/UV</span>
-    <span><b>palette</b> extract + classify + export</span>
+  <div class="empty-logo">ChromaScope</div>
+  <div class="empty-sub">forensic color lab</div>
+  <div class="empty-actions">
+    <button class="btn primary" id="load-btn-big">open</button>
+    <button class="btn ghost" id="url-btn-big">url</button>
   </div>
-  <div class="load-row">
-    <button class="btn primary load-btn-big" id="load-btn-big">Load image</button>
-    <button class="btn ghost load-btn-big" id="url-btn-big">From URL</button>
+  <div class="empty-hints">drop · paste <kbd>⌘V</kbd></div>
+  <div class="empty-footer">nothing uploads &nbsp;·&nbsp; <a href="https://hed0rah.github.io" target="_blank" rel="noopener">hed0rah</a></div>
+</div>
+
+<div class="about-overlay" id="about-overlay">
+  <div class="about-box">
+    <div class="about-head">
+      ChromaScope
+      <button class="about-close" id="about-close">×</button>
+    </div>
+    <div class="about-body">
+      <div class="about-row"><span class="lbl">select region</span><span class="key">V</span></div>
+      <div class="about-row"><span class="lbl">pan</span><span class="key">H · space</span></div>
+      <div class="about-row"><span class="lbl">inspect pixel</span><span class="key">I</span></div>
+      <div class="about-row"><span class="lbl">measure distance</span><span class="key">M</span></div>
+      <div class="about-row"><span class="lbl">eyedropper</span><span class="key">P</span></div>
+      <hr class="about-divider">
+      <div class="about-row"><span class="lbl">zoom</span><span class="key">wheel · ± · 0 fit · 1:1</span></div>
+      <div class="about-row"><span class="lbl">load</span><span class="key">drag · paste · url</span></div>
+      <div class="about-row"><span class="lbl">export palette</span><span class="key">E</span></div>
+      <div class="about-row"><span class="lbl">geometry mode</span><span class="key">→ GEO button</span></div>
+      <hr class="about-divider">
+      <div class="about-row"><span class="lbl">shadow-stretch · edges · mirror</span><span class="key">forensic</span></div>
+      <div class="about-row"><span class="lbl">histograms · hue wheel · k-means</span><span class="key">analyze</span></div>
+      <div class="about-row"><span class="lbl">fake IR/UV · fake color</span><span class="key">forensic</span></div>
+      <hr class="about-divider">
+      <div class="about-note">runs in browser — nothing uploads anywhere</div>
+      <div class="about-links">
+        <a href="https://hed0rah.github.io" target="_blank" rel="noopener">hed0rah.github.io</a>
+        <a href="https://x.com/r3l0z" target="_blank" rel="noopener">x.com/r3l0z</a>
+      </div>
+    </div>
   </div>
-  <div class="keys">
-    <span>or drag a file anywhere on this page</span>
-    <span>or paste from clipboard with <kbd>Ctrl</kbd>+<kbd>V</kbd></span>
-  </div>
-  <p style="margin-top:24px; font-size:12px; color:var(--muted)">Everything runs in your browser. Nothing uploads anywhere.</p>
 </div>
 
 <div class="app hidden" id="app">
@@ -659,6 +893,7 @@ kbd {
       <div class="viewport tool-select" id="viewport">
         <canvas id="view-canvas"></canvas>
         <canvas id="overlay-canvas"></canvas>
+        <svg id="geo-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
         <div class="hud dim" id="hud">
           <div class="swatch-row"><div class="swatch" id="hud-swatch"></div><span class="swatch-hex" id="hud-hex">#------</span></div>
           <span class="k">src xy</span><span class="v" id="hud-xy">-, -</span>
@@ -714,23 +949,67 @@ kbd {
     </div>
 
     <aside class="analysis-pane">
+
+      <!-- GEO PANEL (shown instead of normal content when geo mode is active) -->
+      <div id="geo-panel">
+        <div class="geo-hint" id="geo-hint">activate a tool to start measuring</div>
+        <div class="geo-toolbar-row">
+          <button class="geo-tool-btn" data-geo-tool="pan" title="Pan (drag)">pan</button>
+          <button class="geo-tool-btn" data-geo-tool="select" title="Select [V]">sel</button>
+          <button class="geo-tool-btn" data-geo-tool="move" title="Move / drag measurement [M]">move</button>
+          <button class="geo-tool-btn" data-geo-tool="line" title="Line [L]">line</button>
+          <button class="geo-tool-btn" data-geo-tool="angle" title="Angle [A]">angle</button>
+          <button class="geo-tool-btn" data-geo-tool="poly" title="Polygon [P]">poly</button>
+        </div>
+        <div class="geo-modes-row">
+          <button class="geo-mode-btn" data-geo-mode="golden">golden Φ</button>
+          <button class="geo-mode-btn" data-geo-mode="thirds">thirds</button>
+          <button class="geo-mode-btn" data-geo-mode="diagonals">diagonals</button>
+          <button class="geo-mode-btn" data-geo-mode="center">center</button>
+        </div>
+        <div class="geo-calib-row">
+          <label>unit px:</label>
+          <input type="number" id="geo-calib-px" min="1" value="100" title="Number of pixels for 1 unit">
+          <label>unit name:</label>
+          <input type="text" id="geo-calib-name" value="u" style="width:36px; background:var(--surface); border:1px solid var(--border-strong); color:var(--fg); font-family:ui-monospace,monospace; font-size:10px; padding:3px 5px;" title="Unit label">
+        </div>
+        <div class="geo-meas-scroll">
+          <div class="geo-meas-empty" id="geo-meas-empty">No measurements yet.<br>Draw lines, angles, or polygons with the tools above.</div>
+          <div id="geo-meas-list"></div>
+        </div>
+        <div class="geo-actions-row">
+          <button class="btn ghost" id="geo-clear-btn" style="font-size:11px; padding:5px 10px;">Clear all</button>
+          <button class="btn ghost" id="geo-export-btn" style="font-size:11px; padding:5px 10px;">Export JSON</button>
+        </div>
+      </div>
+      <!-- END GEO PANEL -->
+
+      <div id="geo-normal-content">
+
+      <!-- 1 · dominant colors (visual, immediate) -->
+      <div class="an-section">
+        <h3>Dominant colors <span class="count" id="dom-count">k=8</span></h3>
+        <div class="dom-grid" id="dom-grid">
+          <div class="empty-state" style="grid-column:1/-1; padding:6px 0">draw a selection to analyze</div>
+        </div>
+      </div>
+
+      <!-- 2 · image palette -->
       <div class="an-section">
         <h3>Image palette <span class="count" id="pal-count"></span><button class="mini-btn" id="pal-extract">extract</button></h3>
-        <div id="pal-empty" class="empty-state">Click extract to pull a 12-color palette from the whole image (k-means). Rename swatches, then classify any selection against them.</div>
+        <div id="pal-empty" class="empty-state">whole-image k-means · rename + classify</div>
         <div class="palette-grid" id="palette-grid" style="display:none"></div>
       </div>
-      <div class="an-section">
-        <h3>Selection</h3>
-        <div id="sel-empty" class="empty-state">Drag a rectangle on the image to sample its colors. Or click "Select all".</div>
-        <div class="sel-info" id="sel-info" style="display:none"></div>
+
+      <!-- 3 · palette match -->
+      <div class="an-section" id="match-section" style="display:none">
+        <h3>Palette match <span class="count">nearest pigment</span></h3>
+        <div class="match-list" id="match-list"></div>
       </div>
+
+      <!-- 4 · rgb histogram -->
       <div class="an-section">
-        <h3>Stats</h3>
-        <div id="stats-empty" class="empty-state">No selection yet.</div>
-        <div class="stats-grid" id="stats-grid" style="display:none"></div>
-      </div>
-      <div class="an-section">
-        <h3>RGB <span class="count">64 bins / channel</span></h3>
+        <h3>RGB histogram <span class="count">64 bins</span></h3>
         <svg class="hist-svg" id="rgb-hist" viewBox="0 0 256 100" preserveAspectRatio="none"></svg>
         <div class="hist-legend">
           <span><span class="sw" style="background:var(--r)"></span>R</span>
@@ -738,20 +1017,28 @@ kbd {
           <span><span class="sw" style="background:var(--b)"></span>B</span>
         </div>
       </div>
+
+      <!-- 5 · hue wheel -->
       <div class="an-section">
         <h3>Hue distribution <span class="count">72 bins</span></h3>
         <svg class="hue-wheel" id="hue-wheel" viewBox="-110 -110 220 220"></svg>
       </div>
-      <div class="an-section">
-        <h3>Dominant colors <span class="count" id="dom-count">k-means k=8</span></h3>
-        <div class="dom-grid" id="dom-grid">
-          <div class="empty-state" style="grid-column:1/-1; padding:8px">No selection yet.</div>
-        </div>
+
+      <!-- 6 · selection info (compact) -->
+      <div class="an-section an-section-muted">
+        <h3>Selection</h3>
+        <div id="sel-empty" class="empty-state">drag to select · or select all</div>
+        <div class="sel-info" id="sel-info" style="display:none"></div>
       </div>
-      <div class="an-section" id="match-section" style="display:none">
-        <h3>Palette match <span class="count">nearest pigment</span></h3>
-        <div class="match-list" id="match-list"></div>
+
+      <!-- 7 · detailed stats (bottom) -->
+      <div class="an-section an-section-muted">
+        <h3>Stats</h3>
+        <div id="stats-empty" class="empty-state">—</div>
+        <div class="stats-grid" id="stats-grid" style="display:none"></div>
       </div>
+
+      </div><!-- end geo-normal-content -->
     </aside>
   </div>
 
@@ -807,6 +1094,15 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   setTheme(htmlEl.dataset.theme === 'dark' ? 'light' : 'dark');
 });
 try { setTheme(localStorage.getItem('chromascope-theme') || 'dark'); } catch(e) { setTheme('dark'); }
+
+// ── about modal ───────────────────────────────────────────────
+const aboutOverlay = document.getElementById('about-overlay');
+function openAbout()  { aboutOverlay.classList.add('open'); }
+function closeAbout() { aboutOverlay.classList.remove('open'); }
+document.getElementById('about-btn').addEventListener('click', openAbout);
+document.getElementById('about-close').addEventListener('click', closeAbout);
+aboutOverlay.addEventListener('click', e => { if (e.target === aboutOverlay) closeAbout(); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && aboutOverlay.classList.contains('open')) closeAbout(); });
 
 function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
@@ -943,6 +1239,7 @@ function finishLoad(label) {
   resizeCanvases();
   fitView();
   render();
+  if (typeof geoOnImageLoad === 'function') geoOnImageLoad();
 }
 
 // ============================================================
@@ -1093,7 +1390,7 @@ function renderOverlay() {
 
   // saved regions (faint outlines + labels)
   overlayCtx.lineWidth = 1;
-  overlayCtx.font = '10px ui-monospace, monospace';
+  overlayCtx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
   for (const reg of state.regions) {
     const a = srcToScreen(reg.x, reg.y);
     const w = reg.w * state.view.scale, h = reg.h * state.view.scale;
@@ -1129,9 +1426,17 @@ function renderOverlay() {
     overlayCtx.strokeStyle = accent;
     overlayCtx.lineWidth = 1.5;
     overlayCtx.beginPath(); overlayCtx.moveTo(a.x, a.y); overlayCtx.lineTo(b.x, b.y); overlayCtx.stroke();
+    const handleR = (state.measure.b && state.tool === 'measure') ? 5 : 3;
     for (const p of [a, b]) {
       overlayCtx.fillStyle = accent;
-      overlayCtx.beginPath(); overlayCtx.arc(p.x, p.y, 3, 0, 7); overlayCtx.fill();
+      overlayCtx.beginPath(); overlayCtx.arc(p.x, p.y, handleR, 0, Math.PI*2); overlayCtx.fill();
+      if (state.measure.b && state.tool === 'measure') {
+        overlayCtx.save();
+        overlayCtx.strokeStyle = 'rgba(255,255,255,0.55)';
+        overlayCtx.lineWidth = 1;
+        overlayCtx.beginPath(); overlayCtx.arc(p.x, p.y, handleR + 3, 0, Math.PI*2); overlayCtx.stroke();
+        overlayCtx.restore();
+      }
     }
     if (state.measure.b) drawMeasureLabel(a, b);
   }
@@ -1146,7 +1451,7 @@ function drawMeasureLabel(a, b) {
   const ang = (Math.atan2(dys, dxs) * 180 / Math.PI).toFixed(1);
   const txt = Math.round(distOrig) + 'px  ' + pctW.toFixed(1) + '%W  ' + ang + '°';
   const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-  overlayCtx.font = '11px ui-monospace, monospace';
+  overlayCtx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
   const w = overlayCtx.measureText(txt).width + 10;
   overlayCtx.fillStyle = 'rgba(0,0,0,0.7)';
   overlayCtx.fillRect(mx - w/2, my - 22, w, 16);
@@ -1261,6 +1566,13 @@ viewport.addEventListener('mousedown', (e) => {
     const s = screenToSrc(m.x, m.y);
     interaction = { type: 'select', start: clampSrc(s), moved: false };
   } else if (state.tool === 'measure') {
+    if (state.measure && state.measure.b) {
+      const THRESH = 10;
+      const sa = srcToScreen(state.measure.a.x, state.measure.a.y);
+      const sb = srcToScreen(state.measure.b.x, state.measure.b.y);
+      if (Math.hypot(m.x-sa.x, m.y-sa.y) <= THRESH) { interaction = { type:'measure-drag', endpoint:'a' }; return; }
+      if (Math.hypot(m.x-sb.x, m.y-sb.y) <= THRESH) { interaction = { type:'measure-drag', endpoint:'b' }; return; }
+    }
     const s = clampSrc(screenToSrc(m.x, m.y));
     state.measure = { a: s, b: null };
     interaction = { type: 'measure' };
@@ -1281,7 +1593,18 @@ window.addEventListener('mousemove', (e) => {
   const within = m.x >= 0 && m.y >= 0 && m.x <= vpSize().w && m.y <= vpSize().h;
   if (within && !interaction) updateHud(clampSrc(screenToSrc(m.x, m.y)));
 
-  if (!interaction) return;
+  if (!interaction) {
+    if (state.tool === 'measure' && state.measure && state.measure.b) {
+      const THRESH = 10;
+      const sa = srcToScreen(state.measure.a.x, state.measure.a.y);
+      const sb = srcToScreen(state.measure.b.x, state.measure.b.y);
+      const near = Math.hypot(m.x-sa.x, m.y-sa.y) <= THRESH || Math.hypot(m.x-sb.x, m.y-sb.y) <= THRESH;
+      viewport.style.cursor = near ? 'grab' : '';
+    } else if (state.tool !== 'measure') {
+      viewport.style.cursor = '';
+    }
+    return;
+  }
   if (interaction.type === 'pan') {
     state.view.tx = interaction.ox + (m.x - interaction.startX);
     state.view.ty = interaction.oy + (m.y - interaction.startY);
@@ -1294,8 +1617,10 @@ window.addEventListener('mousemove', (e) => {
     render();
   } else if (interaction.type === 'measure') {
     state.measure.b = clampSrc(screenToSrc(m.x, m.y));
-    render();
-    updateHud(state.measure.b);
+    render(); updateHud(state.measure.b);
+  } else if (interaction.type === 'measure-drag') {
+    state.measure[interaction.endpoint] = clampSrc(screenToSrc(m.x, m.y));
+    render(); updateHud(state.measure[interaction.endpoint]);
   }
 });
 window.addEventListener('mouseup', (e) => {
@@ -1605,7 +1930,7 @@ function renderHueWheel(Hh) {
   }
   ['0','90','180','270'].forEach(deg => {
     const a = (parseInt(deg)-90)*Math.PI/180, x = (maxBarR+8)*Math.cos(a), y = (maxBarR+8)*Math.sin(a);
-    html += `<text x="${x}" y="${y+3}" text-anchor="middle" fill="var(--muted)" font-family="ui-monospace, monospace" font-size="8">${deg}°</text>`;
+    html += `<text x="${x}" y="${y+3}" text-anchor="middle" fill="var(--muted)" font-family=""IBM Plex Mono", ui-monospace, monospace" font-size="8">${deg}°</text>`;
   });
   svg.innerHTML = html;
 }
@@ -1904,11 +2229,763 @@ let resizeTimer = null;
 window.addEventListener('resize', () => {
   if (!state.src) return;
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => { resizeCanvases(); clampPan(); render(); }, 100);
+  resizeTimer = setTimeout(() => { resizeCanvases(); clampPan(); render(); if (geoState.active) geoRedrawOverlay(); }, 100);
 });
 
 setTool('select');
 booted = true;
+
+// ============================================================
+// GEO MODE ENGINE
+// ============================================================
+const geoState = {
+  active: false,
+  tool: 'pan',
+  measurements: [],
+  selectedId: null,
+  nextId: 0,
+  drawing: false,
+  draft: [],
+  draftCursor: null,
+  moveDrag: null,   // { measId, vertexIdx (null=whole), startImgPt, origPoints }
+  calibration: { px: 100, name: 'u' },
+  modes: {},
+  storageKey: '',
+};
+
+const GEO_COLORS = ['#00d4ff','#ff6b6b','#50e890','#ffb800','#c87eff','#ff8c42','#4fc3f7','#f06292'];
+const GEO_STROKE = 1.5;
+const GEO_PT_R   = 3.5;
+
+// ── geometry math ────────────────────────────────────────────
+function geoDist(a, b)  { return Math.hypot(b.x - a.x, b.y - a.y); }
+function geoLineAngle(a, b) {
+  let d = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+  if (d < 0) d += 180;
+  return d;
+}
+function geoAngleBetween(a, vertex, c) {
+  const ba = { x: a.x - vertex.x, y: a.y - vertex.y };
+  const bc = { x: c.x - vertex.x, y: c.y - vertex.y };
+  const dot = ba.x*bc.x + ba.y*bc.y;
+  const mag = Math.hypot(ba.x, ba.y) * Math.hypot(bc.x, bc.y);
+  if (mag === 0) return 0;
+  return Math.acos(Math.max(-1, Math.min(1, dot/mag))) * 180 / Math.PI;
+}
+function geoPolygonArea(pts) {
+  let a = 0, n = pts.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i+1) % n;
+    a += pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+  }
+  return Math.abs(a) / 2;
+}
+function geoPolygonPerimeter(pts) {
+  let p = 0, n = pts.length;
+  for (let i = 0; i < n; i++) p += geoDist(pts[i], pts[(i+1)%n]);
+  return p;
+}
+function geoPolygonInteriorAngles(pts) {
+  return pts.map((b,i) => {
+    const a = pts[(i-1+pts.length)%pts.length];
+    const c = pts[(i+1)%pts.length];
+    return geoAngleBetween(a, b, c);
+  });
+}
+function geoPxToUnit(px) {
+  const u = geoState.calibration.px || 100;
+  return (px / u).toFixed(2) + ' ' + (geoState.calibration.name || 'u');
+}
+
+// ── SVG helpers ───────────────────────────────────────────────
+function geoSvgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs || {})) el.setAttribute(k, v);
+  return el;
+}
+function geoLabelAttrs(x, y, color, anchor) {
+  return {
+    x, y, fill: color,
+    'font-family': 'ui-monospace,Menlo,Consolas,monospace',
+    'font-size': 11,
+    'dominant-baseline': 'middle',
+    'text-anchor': anchor || 'start',
+    stroke: '#000',
+    'stroke-width': 2.5,
+    'paint-order': 'stroke fill',
+  };
+}
+function geoMakeDot(cx, cy, color) {
+  return geoSvgEl('circle', { cx, cy, r: GEO_PT_R, fill: color, class:'geo-pt' });
+}
+function geoMakeText(x, y, text, color, anchor) {
+  const t = geoSvgEl('text', geoLabelAttrs(x, y, color, anchor));
+  t.textContent = text;
+  return t;
+}
+function geoArcPath(cx, cy, r, a1, a2) {
+  let da = a2 - a1;
+  while (da >  Math.PI) da -= 2*Math.PI;
+  while (da < -Math.PI) da += 2*Math.PI;
+  const ea = a1 + da;
+  const sx = cx + r*Math.cos(a1), sy = cy + r*Math.sin(a1);
+  const ex = cx + r*Math.cos(ea), ey = cy + r*Math.sin(ea);
+  const large = Math.abs(da) > Math.PI ? 1 : 0;
+  const sweep = da > 0 ? 1 : 0;
+  return `M${sx.toFixed(1)},${sy.toFixed(1)} A${r},${r} 0 ${large} ${sweep} ${ex.toFixed(1)},${ey.toFixed(1)}`;
+}
+
+// ── coordinate mapping ────────────────────────────────────────
+// client coords → image-space coords (state.w × state.h)
+function geoClientToImg(clientX, clientY) {
+  const r = viewport.getBoundingClientRect();
+  return {
+    x: (clientX - r.left - state.view.tx) / state.view.scale,
+    y: (clientY - r.top  - state.view.ty) / state.view.scale,
+  };
+}
+function geoSnapImg(pt) {
+  return {
+    x: Math.max(0, Math.min(state.w - 1, Math.round(pt.x))),
+    y: Math.max(0, Math.min(state.h - 1, Math.round(pt.y))),
+  };
+}
+// image-space coords → SVG screen coords (viewport-relative CSS pixels)
+function geoImgToScreen(ix, iy) {
+  const v = state.view;
+  return { x: v.tx + ix * v.scale, y: v.ty + iy * v.scale };
+}
+
+// ── full overlay redraw (called on zoom/pan/add/delete) ───────
+function geoRedrawOverlay() {
+  const svg = document.getElementById('geo-overlay');
+  if (!svg) return;
+  if (!geoState.active || !state.src) { svg.innerHTML = ''; return; }
+  svg.innerHTML = '';
+  // analysis mode overlays (behind measurements)
+  Object.keys(GEO_MODES).forEach(name => {
+    if (!geoState.modes[name]) return;
+    const g = geoSvgEl('g', { class:'geo-preset', 'data-mode':name });
+    GEO_MODES[name].render.call(GEO_MODES[name], g);
+    svg.appendChild(g);
+  });
+  // measurements
+  geoState.measurements.forEach(m => geoRenderMeasSVG(m));
+  // draft preview if mid-draw
+  if (geoState.drawing && geoState.draft.length > 0 && geoState.draftCursor) {
+    geoRenderDraftScreen(geoState.draftCursor);
+  }
+}
+
+// ── render measurement SVG (all coords in screen space) ──────
+function geoRenderMeasSVG(m) {
+  const svg = document.getElementById('geo-overlay');
+  const grp = geoSvgEl('g', { id:'geo-m'+m.id, class:'geo-grp', 'data-id': m.id });
+  const c   = m.color;
+
+  if (m.type === 'line') {
+    const [a, b] = m.points.map(p => geoImgToScreen(p.x, p.y));
+    grp.appendChild(geoSvgEl('line', { x1:a.x, y1:a.y, x2:b.x, y2:b.y, stroke:c, 'stroke-width':GEO_STROKE }));
+    grp.appendChild(geoMakeDot(a.x, a.y, c));
+    grp.appendChild(geoMakeDot(b.x, b.y, c));
+    const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+    const dx = b.x-a.x, dy = b.y-a.y, dl = Math.hypot(dx,dy)||1;
+    const offX = -dy/dl*10+6, offY = dx/dl*10;
+    grp.appendChild(geoMakeText(mx+offX, my+offY,
+      `${m.data.length_px.toFixed(1)}px  ${geoPxToUnit(m.data.length_px)}  ${m.data.angle_deg.toFixed(1)}°`, c));
+
+  } else if (m.type === 'angle') {
+    const [a, b, cc] = m.points.map(p => geoImgToScreen(p.x, p.y));
+    grp.appendChild(geoSvgEl('line', { x1:a.x, y1:a.y, x2:b.x, y2:b.y, stroke:c, 'stroke-width':GEO_STROKE }));
+    grp.appendChild(geoSvgEl('line', { x1:b.x, y1:b.y, x2:cc.x, y2:cc.y, stroke:c, 'stroke-width':GEO_STROKE }));
+    [a, b, cc].forEach(p => grp.appendChild(geoMakeDot(p.x, p.y, c)));
+    const arc_r = 26;
+    const a1 = Math.atan2(a.y-b.y, a.x-b.x);
+    const a2 = Math.atan2(cc.y-b.y, cc.x-b.x);
+    grp.appendChild(geoSvgEl('path', { d: geoArcPath(b.x, b.y, arc_r, a1, a2), stroke:c, 'stroke-width':1, fill:'none' }));
+    let lda = a2 - a1;
+    while (lda >  Math.PI) lda -= 2*Math.PI;
+    while (lda < -Math.PI) lda += 2*Math.PI;
+    const lmid = a1 + lda/2;
+    grp.appendChild(geoMakeText(b.x + Math.cos(lmid)*(arc_r+14), b.y + Math.sin(lmid)*(arc_r+14),
+      m.data.angle_deg.toFixed(2)+'°', c, 'middle'));
+
+  } else if (m.type === 'poly') {
+    const spts = m.points.map(p => geoImgToScreen(p.x, p.y));
+    const pstr = spts.map(p=>`${p.x},${p.y}`).join(' ');
+    grp.appendChild(geoSvgEl('polygon', { points:pstr, stroke:c, 'stroke-width':GEO_STROKE, fill:c, 'fill-opacity':'.08' }));
+    spts.forEach(p => grp.appendChild(geoMakeDot(p.x, p.y, c)));
+    const scx = spts.reduce((s,p)=>s+p.x,0)/spts.length;
+    const scy = spts.reduce((s,p)=>s+p.y,0)/spts.length;
+    m.data.angles.forEach((ang, i) => {
+      const p = spts[i];
+      const dx = p.x-scx, dy = p.y-scy, dl = Math.hypot(dx,dy)||1;
+      grp.appendChild(geoMakeText(p.x+(dx/dl)*16, p.y+(dy/dl)*16, ang.toFixed(1)+'°', c, 'middle'));
+    });
+  }
+
+  grp.style.pointerEvents = 'all';
+  grp.addEventListener('click', e => {
+    if (geoState.tool === 'select') { e.stopPropagation(); geoSelectMeasurement(m.id); }
+  });
+  svg.appendChild(grp);
+}
+
+// ── draft preview (screen-space, lightweight mousemove update) ─
+function geoRenderDraftScreen(cursorImgPt) {
+  const svg = document.getElementById('geo-overlay');
+  if (!svg) return;
+  let grp = document.getElementById('geo-draft');
+  if (!grp) { grp = geoSvgEl('g', { id:'geo-draft' }); svg.appendChild(grp); }
+  grp.innerHTML = '';
+  const spts = geoState.draft.map(p => geoImgToScreen(p.x, p.y));
+  if (!spts.length) return;
+  const cursor = cursorImgPt ? geoImgToScreen(cursorImgPt.x, cursorImgPt.y) : null;
+  const all = cursor ? [...spts, cursor] : spts;
+  const col = '#ffffff';
+  spts.forEach(p => grp.appendChild(geoSvgEl('circle', { cx:p.x, cy:p.y, r:3.5, fill:col, opacity:.75 })));
+  for (let i = 0; i+1 < all.length; i++) {
+    const [a,b] = [all[i], all[i+1]];
+    grp.appendChild(geoSvgEl('line', { x1:a.x,y1:a.y,x2:b.x,y2:b.y, stroke:col,'stroke-width':1.5,'stroke-dasharray':'4 3',opacity:.7 }));
+  }
+  if (geoState.tool === 'poly' && all.length > 2 && cursor) {
+    grp.appendChild(geoSvgEl('line', { x1:cursor.x,y1:cursor.y,x2:spts[0].x,y2:spts[0].y, stroke:col,'stroke-width':1,'stroke-dasharray':'2 4',opacity:.4 }));
+  }
+}
+
+// ── measurement management ────────────────────────────────────
+function geoAddMeasurement(m) {
+  m.id    = geoState.nextId++;
+  m.color = GEO_COLORS[m.id % GEO_COLORS.length];
+  geoState.measurements.push(m);
+  geoRenderMeasSVG(m);
+  geoRenderPanel();
+  geoSave();
+}
+function geoDeleteMeasurement(id) {
+  geoState.measurements = geoState.measurements.filter(m => m.id !== id);
+  if (geoState.selectedId === id) geoState.selectedId = null;
+  geoRedrawOverlay();
+  geoRenderPanel();
+  geoSave();
+}
+function geoSelectMeasurement(id) {
+  geoState.selectedId = id;
+  document.querySelectorAll('#geo-overlay .geo-grp').forEach(g => {
+    g.style.filter = (id !== null && +g.dataset.id === id) ? 'drop-shadow(0 0 3px #fff)' : '';
+  });
+  document.querySelectorAll('.geo-meas-item').forEach(el => {
+    el.classList.toggle('selected', id !== null && +el.dataset.id === id);
+  });
+}
+
+// ── commit / cancel ───────────────────────────────────────────
+function geoCommitLine() {
+  const [a, b] = geoState.draft;
+  const len = geoDist(a, b);
+  geoAddMeasurement({ type:'line', points:[a,b],
+    data: { length_px: len, angle_deg: geoLineAngle(a,b) } });
+  geoCancelDraft();
+}
+function geoCommitAngle() {
+  const [a, b, c] = geoState.draft;
+  const deg = geoAngleBetween(a, b, c);
+  geoAddMeasurement({ type:'angle', points:[a,b,c], data: { angle_deg: deg } });
+  geoCancelDraft();
+}
+function geoCommitPoly() {
+  const pts = geoState.draft;
+  if (pts.length < 3) { geoCancelDraft(); return; }
+  const angles = geoPolygonInteriorAngles(pts);
+  const area   = geoPolygonArea(pts);
+  const perim  = geoPolygonPerimeter(pts);
+  geoAddMeasurement({ type:'poly', points:[...pts],
+    data: { n: pts.length, angles, area_px2: area, perim_px: perim } });
+  geoCancelDraft();
+}
+function geoCancelDraft() {
+  geoState.drawing = false;
+  geoState.draft   = [];
+  geoState.draftCursor = null;
+  document.getElementById('geo-draft')?.remove();
+  geoSetHint('');
+}
+
+// ── recompute stored data after points are moved ──────────────
+function geoRecomputeData(m) {
+  const pts = m.points;
+  if (m.type === 'line') {
+    const len = geoDist(pts[0], pts[1]);
+    m.data.length_px = len;
+    m.data.angle_deg = geoLineAngle(pts[0], pts[1]);
+  } else if (m.type === 'angle') {
+    m.data.angle_deg = geoAngleBetween(pts[0], pts[1], pts[2]);
+  } else if (m.type === 'poly') {
+    m.data.angles   = geoPolygonInteriorAngles(pts);
+    m.data.area_px2 = geoPolygonArea(pts);
+    m.data.perim_px = geoPolygonPerimeter(pts);
+  }
+}
+
+// ── hint text ─────────────────────────────────────────────────
+const GEO_TOOL_HINTS = {
+  pan:    'drag to pan',
+  select: 'click a measurement to select it',
+  move:   'click a measurement to select, then drag to move · drag near a vertex to move only that point',
+  line:   'click two points to measure distance',
+  angle:  'click: A  vertex  C',
+  poly:   'click points, Enter or dbl-click to close',
+};
+function geoSetHint(msg) {
+  const el = document.getElementById('geo-hint');
+  if (el) el.textContent = msg || GEO_TOOL_HINTS[geoState.tool] || '';
+}
+function geoUpdateHintForDraw() {
+  const n = geoState.draft.length;
+  switch(geoState.tool) {
+    case 'line':  geoSetHint(n < 1 ? 'click point A' : 'click point B'); break;
+    case 'angle': geoSetHint(n < 1 ? 'click point A' : n < 2 ? 'click vertex B' : 'click point C'); break;
+    case 'poly':  geoSetHint(`${n} point${n===1?'':'s'} — Enter or dbl-click to close (Esc to cancel)`); break;
+  }
+}
+
+// ── tool management ───────────────────────────────────────────
+function geoSetTool(name) {
+  if (geoState.drawing) geoCancelDraft();
+  geoState.tool = name;
+  document.querySelectorAll('.geo-tool-btn[data-geo-tool]').forEach(b =>
+    b.classList.toggle('active', b.dataset.geoTool === name));
+  // pointer-events on SVG overlay
+  const svg = document.getElementById('geo-overlay');
+  const drawTools = ['line','angle','poly','select','move'];
+  svg.classList.toggle('geo-draw', drawTools.includes(name));
+  const geoCursorClasses = ['geo-tool-pan','geo-tool-select','geo-tool-move','geo-tool-line','geo-tool-angle','geo-tool-poly'];
+  viewport.classList.remove(...geoCursorClasses);
+  viewport.classList.add('geo-tool-' + name);
+  geoSetHint('');
+}
+
+// ── analysis mode overlays ────────────────────────────────────
+// All GEO_MODES render functions use geoImgToScreen() for correct alignment.
+// They take only (g) — W/H come from state.w/state.h at render time.
+const GEO_MODES = {
+  golden: {
+    label: 'Golden Φ', color: '#50b870',
+    render(g) {
+      const c = this.color, W = state.w, H = state.h;
+      const s = { stroke:c,'stroke-width':1,'stroke-dasharray':'5 4',opacity:.75 };
+      [0.382, 0.618].forEach(f => {
+        const [a,b] = [geoImgToScreen(f*W,0), geoImgToScreen(f*W,H)];
+        g.appendChild(geoSvgEl('line', { x1:a.x,y1:a.y,x2:b.x,y2:b.y,...s }));
+        const [c1,d1] = [geoImgToScreen(0,f*H), geoImgToScreen(W,f*H)];
+        g.appendChild(geoSvgEl('line', { x1:c1.x,y1:c1.y,x2:d1.x,y2:d1.y,...s }));
+      });
+      const lo = geoImgToScreen(0.382*W, 0), hi = geoImgToScreen(0.618*W, 0);
+      const ll = geoSvgEl('text', geoLabelAttrs(lo.x+4, lo.y+16, c)); ll.textContent = '0.382'; g.appendChild(ll);
+      const lh = geoSvgEl('text', geoLabelAttrs(hi.x+4, hi.y+16, c)); lh.textContent = '0.618 (φ)'; g.appendChild(lh);
+    },
+  },
+  thirds: {
+    label: 'Thirds', color: '#8868e8',
+    render(g) {
+      const c = this.color, W = state.w, H = state.h;
+      const s = { stroke:c,'stroke-width':1,'stroke-dasharray':'4 4',opacity:.7 };
+      [1/3, 2/3].forEach(f => {
+        const [a,b] = [geoImgToScreen(f*W,0), geoImgToScreen(f*W,H)];
+        g.appendChild(geoSvgEl('line', { x1:a.x,y1:a.y,x2:b.x,y2:b.y,...s }));
+        const [c1,d1] = [geoImgToScreen(0,f*H), geoImgToScreen(W,f*H)];
+        g.appendChild(geoSvgEl('line', { x1:c1.x,y1:c1.y,x2:d1.x,y2:d1.y,...s }));
+      });
+    },
+  },
+  diagonals: {
+    label: 'Diagonals', color: '#30a0d0',
+    render(g) {
+      const c = this.color, W = state.w, H = state.h;
+      const s = { stroke:c,'stroke-width':1,'stroke-dasharray':'5 4',opacity:.65 };
+      const [tl,br,tr,bl] = [geoImgToScreen(0,0),geoImgToScreen(W,H),geoImgToScreen(W,0),geoImgToScreen(0,H)];
+      g.appendChild(geoSvgEl('line', { x1:tl.x,y1:tl.y,x2:br.x,y2:br.y,...s }));
+      g.appendChild(geoSvgEl('line', { x1:tr.x,y1:tr.y,x2:bl.x,y2:bl.y,...s }));
+    },
+  },
+  center: {
+    label: 'Center', color: '#ffb800',
+    render(g) {
+      const c = this.color, W = state.w, H = state.h;
+      const s = { stroke:c,'stroke-width':1,'stroke-dasharray':'6 4',opacity:.7 };
+      const [t,b] = [geoImgToScreen(W/2,0), geoImgToScreen(W/2,H)];
+      g.appendChild(geoSvgEl('line', { x1:t.x,y1:t.y,x2:b.x,y2:b.y,...s }));
+      const [l,r] = [geoImgToScreen(0,H/2), geoImgToScreen(W,H/2)];
+      g.appendChild(geoSvgEl('line', { x1:l.x,y1:l.y,x2:r.x,y2:r.y,...s }));
+    },
+  },
+};
+
+function geoToggleMode(name) {
+  geoState.modes[name] = !geoState.modes[name];
+  const btn = document.querySelector(`.geo-mode-btn[data-geo-mode="${name}"]`);
+  if (btn) btn.classList.toggle('active', geoState.modes[name]);
+  geoRedrawOverlay();
+}
+
+function geoRefreshModes() {
+  // modes are re-rendered inside geoRedrawOverlay — nothing extra needed
+  geoRedrawOverlay();
+}
+
+// ── panel render ──────────────────────────────────────────────
+function geoRenderPanel() {
+  const empty = document.getElementById('geo-meas-empty');
+  const list  = document.getElementById('geo-meas-list');
+  if (!empty || !list) return;
+  empty.style.display = geoState.measurements.length ? 'none' : '';
+  list.innerHTML = '';
+  [...geoState.measurements].reverse().forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'geo-meas-item' + (geoState.selectedId === m.id ? ' selected' : '');
+    div.dataset.id = m.id;
+
+    const row = document.createElement('div');
+    row.className = 'geo-meas-row';
+    const sw = document.createElement('div');
+    sw.className = 'geo-meas-swatch';
+    sw.style.background = m.color;
+    const tp = document.createElement('span');
+    tp.className = 'geo-meas-type';
+    tp.textContent = m.type.toUpperCase() + ' #' + m.id;
+    const del = document.createElement('button');
+    del.className = 'geo-meas-del';
+    del.textContent = '×';
+    del.addEventListener('click', e => { e.stopPropagation(); geoDeleteMeasurement(m.id); });
+    row.appendChild(sw); row.appendChild(tp); row.appendChild(del);
+
+    const data = document.createElement('div');
+    data.className = 'geo-meas-data';
+    if (m.type === 'line') {
+      data.innerHTML = `len: ${m.data.length_px.toFixed(1)}px / ${geoPxToUnit(m.data.length_px)}<br>angle: ${m.data.angle_deg.toFixed(2)}°`;
+    } else if (m.type === 'angle') {
+      data.innerHTML = `angle: ${m.data.angle_deg.toFixed(3)}°`;
+    } else if (m.type === 'poly') {
+      const aStr = m.data.angles.map((a,i) => `∠${i+1}: ${a.toFixed(1)}°`).join('  ');
+      data.innerHTML = `${aStr}<br>perim: ${m.data.perim_px.toFixed(0)}px  area: ${m.data.area_px2.toFixed(0)}px²`;
+    }
+
+    div.appendChild(row);
+    div.appendChild(data);
+    div.addEventListener('click', () => geoSelectMeasurement(m.id));
+    list.appendChild(div);
+  });
+}
+
+// ── persist ───────────────────────────────────────────────────
+function geoSave() {
+  if (!geoState.storageKey) return;
+  try {
+    localStorage.setItem(geoState.storageKey, JSON.stringify({
+      measurements: geoState.measurements,
+      nextId: geoState.nextId,
+      calibration: geoState.calibration,
+    }));
+  } catch(e) {}
+}
+function geoLoad() {
+  if (!geoState.storageKey) return;
+  try {
+    const raw = localStorage.getItem(geoState.storageKey);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    geoState.measurements = data.measurements || [];
+    geoState.nextId       = data.nextId || 0;
+    if (data.calibration) {
+      geoState.calibration = data.calibration;
+      const pxEl = document.getElementById('geo-calib-px');
+      const nmEl = document.getElementById('geo-calib-name');
+      if (pxEl) pxEl.value = geoState.calibration.px;
+      if (nmEl) nmEl.value = geoState.calibration.name;
+    }
+    // rebuild SVGs
+    const svg = document.getElementById('geo-overlay');
+    svg.querySelectorAll('.geo-grp').forEach(el => el.remove());
+    geoState.measurements.forEach(m => geoRenderMeasSVG(m));
+    geoRenderPanel();
+  } catch(e) {}
+}
+
+// ── activate / deactivate ─────────────────────────────────────
+function geoActivate() {
+  geoState.active = true;
+  document.getElementById('geo-toggle').classList.add('active');
+  document.getElementById('geo-panel').style.display = 'flex';
+  document.getElementById('geo-normal-content').style.display = 'none';
+  document.getElementById('geo-overlay').style.display = 'block';
+  if (state.src) {
+    geoLoad();
+    geoRedrawOverlay();
+  }
+  geoSetTool('pan');
+}
+function geoDeactivate() {
+  geoState.active = false;
+  if (geoState.drawing) geoCancelDraft();
+  document.getElementById('geo-toggle').classList.remove('active');
+  document.getElementById('geo-panel').style.display = 'none';
+  document.getElementById('geo-normal-content').style.display = '';
+  const svg = document.getElementById('geo-overlay');
+  svg.style.display = 'none';
+  svg.classList.remove('geo-draw');
+  svg.innerHTML = '';
+  const geoCursorClasses = ['geo-tool-pan','geo-tool-select','geo-tool-move','geo-tool-line','geo-tool-angle','geo-tool-poly','geo-dragging'];
+  viewport.classList.remove(...geoCursorClasses);
+  viewport.style.cursor = '';
+}
+function geoToggle() {
+  if (geoState.active) geoDeactivate();
+  else geoActivate();
+}
+
+// ── pointer events on viewport (geo mode) ────────────────────
+let geoLastClickPt = null, geoLastClickTime = 0;
+
+function geoOnMousedown(e) {
+  if (!geoState.active || !state.src) return;
+  if (e.button !== 0) return;
+
+  const raw = geoClientToImg(e.clientX, e.clientY);
+  const ipt = geoSnapImg(raw);
+
+  if (geoState.tool === 'pan' || spaceDown) return;
+  if (geoState.tool === 'select') { geoSelectMeasurement(null); return; }
+
+  // move tool: start drag
+  if (geoState.tool === 'move') {
+    const VERTEX_THRESH_PX = 12; // screen pixels
+    for (const m of geoState.measurements) {
+      // check vertices first (more precise drag)
+      for (let vi = 0; vi < m.points.length; vi++) {
+        const sp = geoImgToScreen(m.points[vi].x, m.points[vi].y);
+        const r  = viewport.getBoundingClientRect();
+        const dx = e.clientX - r.left - sp.x, dy = e.clientY - r.top - sp.y;
+        if (Math.hypot(dx, dy) <= VERTEX_THRESH_PX) {
+          geoState.moveDrag = { measId: m.id, vertexIdx: vi,
+            startImgPt: ipt, origPoints: m.points.map(p=>({...p})) };
+          geoSelectMeasurement(m.id);
+          e.stopPropagation();
+          return;
+        }
+      }
+    }
+    // no vertex hit — try whole-shape drag on selected measurement
+    if (geoState.selectedId !== null) {
+      const m = geoState.measurements.find(m => m.id === geoState.selectedId);
+      if (m) {
+        geoState.moveDrag = { measId: m.id, vertexIdx: null,
+          startImgPt: ipt, origPoints: m.points.map(p=>({...p})) };
+        e.stopPropagation();
+        return;
+      }
+    }
+    return;
+  }
+
+  // drawing tools
+  const now  = Date.now();
+  const isDbl = geoLastClickPt
+    && geoDist(ipt, geoLastClickPt) < 10 / state.view.scale
+    && (now - geoLastClickTime) < 380;
+  geoLastClickPt  = ipt;
+  geoLastClickTime = now;
+
+  if (geoState.tool === 'poly' && geoState.drawing && isDbl) {
+    if (geoState.draft.length > 1) geoState.draft.pop();
+    geoCommitPoly();
+    return;
+  }
+
+  geoState.drawing = true;
+  geoState.draft.push(ipt);
+  geoUpdateHintForDraw();
+  if (geoState.tool === 'line'  && geoState.draft.length === 2) geoCommitLine();
+  if (geoState.tool === 'angle' && geoState.draft.length === 3) geoCommitAngle();
+  e.stopPropagation();
+}
+
+function geoOnMousemove(e) {
+  if (!geoState.active || !state.src) return;
+  const raw = geoClientToImg(e.clientX, e.clientY);
+  const ipt = geoSnapImg(raw);
+  geoState.draftCursor = ipt;
+
+  // handle move drag
+  if (geoState.moveDrag) {
+    viewport.classList.add('geo-dragging');
+    const { measId, vertexIdx, startImgPt, origPoints } = geoState.moveDrag;
+    const m = geoState.measurements.find(m => m.id === measId);
+    if (!m) return;
+    const dx = raw.x - startImgPt.x, dy = raw.y - startImgPt.y;
+    if (vertexIdx !== null) {
+      m.points[vertexIdx] = {
+        x: Math.max(0, Math.min(state.w-1, origPoints[vertexIdx].x + dx)),
+        y: Math.max(0, Math.min(state.h-1, origPoints[vertexIdx].y + dy)),
+      };
+    } else {
+      m.points = origPoints.map(p => ({
+        x: Math.max(0, Math.min(state.w-1, p.x + dx)),
+        y: Math.max(0, Math.min(state.h-1, p.y + dy)),
+      }));
+    }
+    geoRecomputeData(m);
+    geoRedrawOverlay();
+    geoRenderPanel();
+    return;
+  }
+
+  if (geoState.drawing && geoState.draft.length > 0) {
+    geoRenderDraftScreen(ipt);
+  }
+}
+
+function geoOnMouseup(e) {
+  if (!geoState.active) return;
+  if (geoState.moveDrag) {
+    geoState.moveDrag = null;
+    viewport.classList.remove('geo-dragging');
+    geoSave();
+  }
+}
+
+function geoOnContextmenu(e) {
+  if (!geoState.active) return;
+  if (geoState.drawing) { e.preventDefault(); geoCancelDraft(); }
+}
+
+viewport.addEventListener('mousedown', geoOnMousedown, true);
+viewport.addEventListener('mousemove', geoOnMousemove);
+viewport.addEventListener('mouseup',   geoOnMouseup);
+viewport.addEventListener('contextmenu', geoOnContextmenu);
+
+// ── keyboard (geo mode, only when active) ────────────────────
+// must be registered before the existing keydown handler processes 'a', 'p', 'l', etc.
+window.addEventListener('keydown', (e) => {
+  if (!geoState.active) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  switch (e.key.toLowerCase()) {
+    case 'l': geoSetTool('line');   e.stopImmediatePropagation(); break;
+    case 'a': geoSetTool('angle');  e.stopImmediatePropagation(); break;
+    case 'p': geoSetTool('poly');   e.stopImmediatePropagation(); break;
+    case 'v': geoSetTool('select'); e.stopImmediatePropagation(); break;
+    case 'm': geoSetTool('move');   e.stopImmediatePropagation(); break;
+    case 'h': geoSetTool('pan');    e.stopImmediatePropagation(); break;
+    case 'enter':
+      if (geoState.tool === 'poly' && geoState.drawing) { geoCommitPoly(); e.stopImmediatePropagation(); }
+      break;
+    case 'escape':
+      if (geoState.drawing) { geoCancelDraft(); e.stopImmediatePropagation(); }
+      break;
+    case 'z':
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (geoState.measurements.length) {
+          geoDeleteMeasurement(geoState.measurements[geoState.measurements.length - 1].id);
+          toast('geo: undo');
+        }
+      }
+      break;
+    case 'delete': case 'backspace':
+      if (geoState.selectedId !== null) {
+        geoDeleteMeasurement(geoState.selectedId);
+        e.stopImmediatePropagation();
+      }
+      break;
+  }
+}, true); // capture so we run before the existing handler
+
+// ── hook into ChromaScope's view transform pipeline ──────────
+// redraw geo overlay whenever zoom/pan changes
+(function() {
+  const raw = state.view;
+  state.view = new Proxy(raw, {
+    set(target, prop, value) {
+      target[prop] = value;
+      if ((prop === 'tx' || prop === 'ty' || prop === 'scale') && geoState.active) {
+        geoRedrawOverlay();
+      }
+      return true;
+    }
+  });
+})();
+
+// ── topbar toggle button ──────────────────────────────────────
+document.getElementById('geo-toggle').addEventListener('click', geoToggle);
+
+// ── geo tool buttons ──────────────────────────────────────────
+document.querySelectorAll('.geo-tool-btn[data-geo-tool]').forEach(btn => {
+  btn.addEventListener('click', () => geoSetTool(btn.dataset.geoTool));
+});
+
+// ── geo mode buttons ──────────────────────────────────────────
+document.querySelectorAll('.geo-mode-btn[data-geo-mode]').forEach(btn => {
+  btn.addEventListener('click', () => geoToggleMode(btn.dataset.geoMode));
+});
+
+// ── calibration inputs ────────────────────────────────────────
+document.getElementById('geo-calib-px').addEventListener('input', (e) => {
+  geoState.calibration.px = Math.max(1, parseFloat(e.target.value) || 100);
+  geoSave();
+});
+document.getElementById('geo-calib-name').addEventListener('input', (e) => {
+  geoState.calibration.name = e.target.value || 'u';
+  geoSave();
+});
+
+// ── clear / export ────────────────────────────────────────────
+document.getElementById('geo-clear-btn').addEventListener('click', () => {
+  geoState.measurements = [];
+  geoState.selectedId = null;
+  document.querySelectorAll('#geo-overlay .geo-grp').forEach(el => el.remove());
+  geoRenderPanel();
+  geoSave();
+  toast('geo measurements cleared');
+});
+document.getElementById('geo-export-btn').addEventListener('click', () => {
+  if (!geoState.measurements.length) { toast('no geo measurements to export'); return; }
+  const payload = {
+    image: state.filename,
+    dimensions: { w: state.origW, h: state.origH, internal_w: state.w, internal_h: state.h },
+    calibration: geoState.calibration,
+    measurements: geoState.measurements.map(m => ({
+      id: m.id, type: m.type, color: m.color,
+      points: m.points.map(p => ({ x: +p.x.toFixed(2), y: +p.y.toFixed(2) })),
+      data: m.data,
+    })),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: (state.filename.replace(/\.[a-z0-9]+$/i,'') || 'image') + '-geo.json',
+  });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('exported ' + geoState.measurements.length + ' geo measurements');
+});
+
+// ── geoOnImageLoad: called from finishLoad on every image load ─
+function geoOnImageLoad() {
+  geoState.measurements = [];
+  geoState.selectedId   = null;
+  geoState.nextId       = 0;
+  geoState.drawing      = false;
+  geoState.draft        = [];
+  geoState.modes        = {};
+  geoState.storageKey   = 'geo-' + state.filename;
+  document.querySelectorAll('.geo-mode-btn').forEach(b => b.classList.remove('active'));
+  const svg = document.getElementById('geo-overlay');
+  if (svg) svg.innerHTML = '';
+  if (geoState.active) {
+    geoLoad();
+    geoRedrawOverlay();
+    geoRenderPanel();
+  }
+}
 </script>
 
 </body>

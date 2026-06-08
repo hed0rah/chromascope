@@ -2,7 +2,8 @@
 # in a per-deployment fork or a private fork. ArtScope is the engine, not
 # the museum.
 
-# Painting source images
+# Painting source images (copyrighted -- keep out of public repo)
+art/
 assets/*.jpg
 assets/*.jpeg
 assets/*.png

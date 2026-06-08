@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  BRUTALIST TERMINAL // HED0RAH DESIGN SYSTEM
+  hed0rah.github.io/ai-visuals
+  Space Mono + Bebas Neue // #0A0A0A // #00FFE9
+  ChromaScope // Scientific Methods in Painting Analysis
+-->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCIENTIFIC METHODS // PAINTING EXAMINATION // CHROMASCOPE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #0a0a0a;
+      --surface:   #111111;
+      --surface2:  #0d0d0d;
+      --border:    #1e1e1e;
+      --border2:   #2a2a2a;
+      --cyan:      #00ffe9;
+      --yellow:    #ffe900;
+      --magenta:   #e900ff;
+      --red:       #ff2233;
+      --green:     #39ff14;
+      --orange:    #ff6b00;
+      --dim:       #3a3a3a;
+      --text:      #cccccc;
+      --bright:    #ffffff;
+      --hi-cyan:   rgba(0,255,233,0.07);
+      --hi-red:    rgba(255,34,51,0.08);
+      --hi-yellow: rgba(255,233,0,0.07);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      line-height: 1.65;
+      padding: 36px 30px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.04) 2px,
+        rgba(0,0,0,0.04) 4px
+      );
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .g2   { display: grid; grid-template-columns: 1fr 1fr;         gap: 2px; margin-bottom: 2px; }
+    .g3   { display: grid; grid-template-columns: 1fr 1fr 1fr;     gap: 2px; margin-bottom: 2px; }
+    .g4   { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 2px; margin-bottom: 2px; }
+    .gfull { margin-bottom: 2px; }
+
+    @media (max-width: 700px) {
+      .g2, .g3, .g4 { grid-template-columns: 1fr; }
+      .hero-flex { flex-direction: column; }
+      .hero-flex .hero-stats { width: 100%; }
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 18px;
+    }
+
+    .plabel {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: #383838;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ptitle {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--bright);
+      margin-bottom: 8px;
+      line-height: 1;
+    }
+    .ptitle.cy { color: var(--cyan); }
+    .ptitle.rd { color: var(--red); }
+    .ptitle.yl { color: var(--yellow); }
+    .ptitle.pu { color: var(--magenta); }
+    .ptitle.or { color: var(--orange); }
+    .ptitle.gr { color: var(--green); }
+
+    .bar {
+      width: 28px;
+      height: 2px;
+      margin-bottom: 10px;
+      background: var(--cyan);
+    }
+    .bar.rd { background: var(--red); }
+    .bar.yl { background: var(--yellow); }
+    .bar.pu { background: var(--magenta); }
+    .bar.or { background: var(--orange); }
+    .bar.gr { background: var(--green); }
+
+    p {
+      font-size: 11px;
+      color: var(--text);
+      margin-bottom: 7px;
+      line-height: 1.65;
+    }
+
+    .hl     { color: var(--cyan);    font-weight: 700; }
+    .hl.rd  { color: var(--red); }
+    .hl.yl  { color: var(--yellow); }
+    .hl.pu  { color: var(--magenta); }
+    .hl.or  { color: var(--orange); }
+    .hl.gr  { color: var(--green); }
+    .hl.dim { color: var(--dim); font-weight: 400; }
+
+    .math-block {
+      background: #060606;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--yellow);
+      padding: 12px 14px;
+      margin: 10px 0;
+      font-size: 11px;
+    }
+    .math-block.cy { border-left-color: var(--cyan); }
+    .math-block.rd { border-left-color: var(--red); }
+    .math-block.pu { border-left-color: var(--magenta); }
+
+    .eq  { color: var(--yellow); }
+    .eq.cy { color: var(--cyan); }
+
+    .tag {
+      display: inline-block;
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #444;
+      margin: 2px 2px 2px 0;
+    }
+    .tag.cy { border-color: var(--cyan);    color: var(--cyan); }
+    .tag.rd { border-color: var(--red);     color: var(--red); }
+    .tag.yl { border-color: var(--yellow);  color: var(--yellow); }
+    .tag.pu { border-color: var(--magenta); color: var(--magenta); }
+    .tag.or { border-color: var(--orange);  color: var(--orange); }
+    .tag.gr { border-color: var(--green);   color: var(--green); }
+
+    .org-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #111;
+      font-size: 10px;
+    }
+    .org-row:last-child { border-bottom: none; }
+    .org-row-label { color: #333; text-transform: uppercase; letter-spacing: 1px; font-size: 9px; }
+    .org-row-val   { font-weight: 700; }
+
+    .stat-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      margin-bottom: 6px;
+    }
+    .stat-box .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      line-height: 1;
+      letter-spacing: 2px;
+    }
+    .stat-box .stat-label {
+      font-size: 8px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-top: 2px;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding-left: 14px;
+      position: relative;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 5px;
+      width: 6px; height: 6px;
+      border: 1px solid var(--cyan);
+      background: var(--bg);
+    }
+    .tl-year {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--cyan);
+      flex-shrink: 0;
+      width: 50px;
+    }
+    .tl-content { font-size: 10px; color: #555; }
+    .tl-content strong { color: var(--bright); display: block; margin-bottom: 1px; }
+
+    .masthead {
+      border-top: 3px solid var(--cyan);
+      padding: 14px 0 10px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid var(--border);
+    }
+    .masthead h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 56px;
+      letter-spacing: 4px;
+      color: var(--bright);
+      line-height: 1;
+    }
+    .masthead h1 em {
+      color: var(--cyan);
+      font-style: normal;
+    }
+    .masthead-right {
+      text-align: right;
+      font-size: 10px;
+      color: #444;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .masthead-right strong {
+      display: block;
+      color: var(--cyan);
+      font-size: 11px;
+      margin-bottom: 2px;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      margin-top: 14px;
+      padding-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: #2a2a2a;
+      letter-spacing: 1px;
+    }
+
+    .hero-flex { display: flex; gap: 18px; }
+    .hero-flex .hero-text { flex: 1; }
+    .hero-flex .hero-stats { width: 180px; flex-shrink: 0; }
+
+    .nav-strip {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #060606;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 0;
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 2px;
+    }
+    .nav-pill {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .nav-pill:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* citation inline link style */
+    .cite {
+      color: var(--dim);
+      font-size: 9px;
+      letter-spacing: 0;
+      text-decoration: none;
+      border-bottom: 1px solid #222;
+    }
+    .cite:hover { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+    /* method stat highlight */
+    .method-meta {
+      display: flex;
+      gap: 2px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    /* result-row for accuracy/perf numbers */
+    .result-row {
+      background: #060606;
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--yellow);
+      padding: 6px 10px;
+      margin: 6px 0;
+      font-size: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .result-row .rval {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 1px;
+      color: var(--yellow);
+    }
+    .result-row .rlabel {
+      font-size: 9px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* bibliography */
+    .bib-entry {
+      padding: 8px 0;
+      border-bottom: 1px solid #0f0f0f;
+      font-size: 10px;
+    }
+    .bib-entry:last-child { border-bottom: none; }
+    .bib-ref {
+      color: var(--cyan);
+      font-weight: 700;
+      margin-right: 8px;
+      font-size: 9px;
+    }
+    .bib-doi {
+      color: var(--dim);
+      font-size: 9px;
+      word-break: break-all;
+    }
+    .bib-doi a { color: var(--dim); text-decoration: none; }
+    .bib-doi a:hover { color: var(--cyan); }
+
+    /* refuted table */
+    .refuted-row {
+      padding: 5px 0;
+      border-bottom: 1px solid #0f0f0f;
+      font-size: 10px;
+      color: #444;
+    }
+    .refuted-row:last-child { border-bottom: none; }
+    .refuted-row .vote-tag {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      color: var(--red);
+      letter-spacing: 1px;
+      margin-right: 6px;
+    }
+
+    h3.sub {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: var(--bright);
+      margin: 12px 0 6px;
+    }
+
+    ul.spec {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 6px 0;
+    }
+    ul.spec li {
+      padding: 2px 0 2px 14px;
+      position: relative;
+      font-size: 10px;
+      color: var(--text);
+    }
+    ul.spec li::before {
+      content: '//';
+      position: absolute;
+      left: 0;
+      color: var(--dim);
+      font-size: 9px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <h1>FORENSIC<br><em>PAINTING ANALYSIS</em></h1>
+    <div class="masthead-right">
+      <strong>ChromaScope // Reference</strong>
+      Scientific Methods // Peer-Reviewed Literature<br>
+      Authentication // Conservation // Attribution
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav-strip">
+    <a class="nav-pill" href="#sec-overview">Overview</a>
+    <a class="nav-pill" href="#sec-spectral">Spectral Imaging</a>
+    <a class="nav-pill" href="#sec-xrf">XRF Mapping</a>
+    <a class="nav-pill" href="#sec-irr">IRR / UV / X-Ray</a>
+    <a class="nav-pill" href="#sec-neutron">Neutron</a>
+    <a class="nav-pill" href="#sec-dendro">Dendrochronology</a>
+    <a class="nav-pill" href="#sec-gcms">GC/MS</a>
+    <a class="nav-pill" href="#sec-ml">AI / ML</a>
+    <a class="nav-pill" href="#sec-auth">Authentication</a>
+    <a class="nav-pill" href="#sec-bib">Bibliography</a>
+  </div>
+
+  <!-- 00 // OVERVIEW -->
+  <div class="gfull" id="sec-overview">
+    <div class="panel">
+      <div class="plabel">00 // Overview</div>
+      <div class="hero-flex">
+        <div class="hero-text">
+          <div class="ptitle cy">Scientific Examination<br>of Paintings</div>
+          <div class="bar"></div>
+          <p>
+            Paintings are stratified physical objects -- ground, priming, underdrawing, paint layers, varnish --
+            and each layer encodes information about materials, technique, and time. The forensic examination of
+            paintings draws on physics, analytical chemistry, dendrochronology, and, increasingly,
+            <span class="hl">machine learning</span> to extract that information without physical sampling.
+          </p>
+          <p>
+            This reference covers methods from <span class="hl or">X-ray radiography</span> and
+            <span class="hl">infrared reflectography</span> through <span class="hl yl">hyperspectral imaging</span>,
+            <span class="hl or">MA-XRF</span>, <span class="hl">Raman spectroscopy</span>,
+            <span class="hl pu">neutron autoradiography</span>, <span class="hl or">dendrochronology</span>,
+            and <span class="hl">GC/MS medium analysis</span>, concluding with the emerging
+            <span class="hl cy">deep learning</span> pipeline that is beginning to automate pigment mapping and
+            attribution.
+          </p>
+          <p>
+            All technical claims in this document are drawn from peer-reviewed primary literature and have
+            been independently verified. Confidence ratings follow a three-vote adversarial protocol.
+            Citations link to primary sources; a full bibliography appears at the end.
+          </p>
+          <div class="method-meta">
+            <span class="tag cy">Non-invasive</span>
+            <span class="tag or">Physical sampling</span>
+            <span class="tag yl">Spectroscopic</span>
+            <span class="tag pu">Computational</span>
+            <span class="tag">Macro-scale</span>
+            <span class="tag">Micro-scale</span>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-box">
+            <div class="stat-num" style="color: var(--cyan);">12+</div>
+            <div class="stat-label">Distinct methods covered</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" style="color: var(--yellow);">500K</div>
+            <div class="stat-label">Synthetic XRF spectra (AAAS 2024)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" style="color: var(--orange);">54</div>
+            <div class="stat-label">Paintings in Berlin neutron study</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" style="color: var(--magenta);">210</div>
+            <div class="stat-label">Tree rings, GNM Rembrandt panel</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 01-02 // SPECTRAL IMAGING -->
+  <div class="gfull" id="sec-spectral">
+    <div class="panel">
+      <div class="plabel">01 // Spectral Imaging</div>
+      <div class="ptitle cy">Multispectral and Hyperspectral Imaging</div>
+      <div class="bar"></div>
+
+      <div class="g2" style="margin-top:10px;">
+        <div>
+          <h3 class="sub">Physics and Setup</h3>
+          <p>
+            Multispectral imaging (MSI) acquires images in discrete spectral bands across the
+            visible, near-infrared, and ultraviolet, typically 8-20 bands. Hyperspectral imaging (HSI)
+            extends this to contiguous spectra (hundreds of bands) at each pixel, enabling full
+            <span class="hl">spectral reflectance curves</span> for material identification.
+          </p>
+          <p>
+            Both techniques are <span class="hl gr">non-invasive</span> -- they require no physical sampling
+            and can cover a full painting surface in a single acquisition session. The speed advantage over
+            point spectroscopy (e.g., Raman, XRF) is significant for large works.
+            Multispectral imaging has been applied to art conservation and art history
+            since the early 1990s, migrating from aerospace remote-sensing platforms.
+            <a class="cite" href="https://doi.org/10.1007/s00339-011-6689-1">[Liang 2011]</a>
+          </p>
+
+          <div class="math-block cy">
+            <div class="eq cy">R(lambda) = L_r(lambda) / L_i(lambda)</div>
+            <div style="color: var(--dim); font-size: 9px; margin-top: 4px;">
+              // spectral reflectance: ratio of reflected to incident radiance at wavelength lambda<br>
+              // each pigment has a characteristic reflectance curve used for identification
+            </div>
+          </div>
+
+          <h3 class="sub">What It Reveals</h3>
+          <ul class="spec">
+            <li>Underdrawings and pentimenti (preparatory lines altered or abandoned)</li>
+            <li>Pigment identification via spectral library matching</li>
+            <li>Conservation state: degradation, retouching, previous restorations</li>
+            <li>Layer structure when combined with computational unmixing</li>
+            <li>Inscription legibility on faded documents and illuminated manuscripts</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="sub">Pigment Identification</h3>
+          <p>
+            Spectral reflectance analysis is the central capability of MSI/HSI for material
+            characterization. Each pigment absorbs and reflects at characteristic wavelengths --
+            lead white peaks in the near-infrared, azurite has a distinctive blue-region absorption
+            feature, vermillion and red lead are separable spectrally despite visual similarity.
+            <a class="cite" href="https://doi.org/10.1007/s00339-011-6689-1">[Liang 2011]</a>
+          </p>
+          <p>
+            A significant limitation of purely spectroscopic methods is that <span class="hl rd">organic
+            pigments</span> (lakes, indigo, organic yellows) have weak or featureless reflectance spectra
+            and may require complementary Raman or GC/MS analysis for confirmation.
+          </p>
+
+          <h3 class="sub">Landmark Studies</h3>
+          <div class="timeline-item">
+            <div class="tl-year">1998</div>
+            <div class="tl-content">
+              <strong>Baronti et al.</strong>
+              Early operational MSI system for pigment mapping. Demonstrates mature pipeline:
+              acquisition, spectral calibration, classification. PubMed 18268717.
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-year" style="color: var(--yellow);">2011</div>
+            <div class="tl-content">
+              <strong>Liang, Applied Physics A</strong>
+              Comprehensive review of spectral imaging advances for conservation:
+              instrument design, image processing, pigment identification.
+              DOI 10.1007/s00339-011-6689-1.
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-year" style="color: var(--orange);">2018</div>
+            <div class="tl-content">
+              <strong>Striova et al., Angewandte Chemie</strong>
+              ANN applied to multispectral data of Manet and Titian paintings --
+              improved visibility of pentimenti and underdrawings.
+              <a class="cite" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10006919/">[PMC10006919]</a>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-year" style="color: var(--magenta);">2023</div>
+            <div class="tl-content">
+              <strong>Kleynhans et al., Sensors</strong>
+              1D-CNN vs. SVM on VNIR hyperspectral data from 14th-century illuminated manuscript.
+              25 paint classes, 16,683 spectra.
+              <a class="cite" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10006919/">[PMC10006919]</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02-03 // XRF -->
+  <div class="gfull" id="sec-xrf">
+    <div class="panel">
+      <div class="plabel">02 // X-Ray Fluorescence</div>
+      <div class="ptitle or">MA-XRF Scanning</div>
+      <div class="bar or"></div>
+
+      <div class="g2" style="margin-top:10px;">
+        <div>
+          <h3 class="sub">Physics</h3>
+          <p>
+            X-ray fluorescence works by irradiating the painting surface with a focused X-ray beam.
+            Inner-shell electrons in target atoms are ejected (photoelectric effect); outer-shell
+            electrons fill the vacancy and emit <span class="hl yl">characteristic fluorescence X-rays</span>
+            whose energies are element-specific. Detection maps elemental distribution across the
+            painting surface without physical sampling.
+          </p>
+          <div class="math-block">
+            <div class="eq">E_Ka = E_K - E_L  //  Ka fluorescence energy</div>
+            <div style="color: var(--dim); font-size: 9px; margin-top: 4px;">
+              // E_K = K-shell binding energy, E_L = L-shell energy<br>
+              // each element has unique Ka, Kb, La... lines<br>
+              // Hg -> Hg-La at 9.99 keV identifies vermillion (HgS)<br>
+              // Pb -> Pb-La at 10.55 keV identifies lead white, red lead
+            </div>
+          </div>
+
+          <p>
+            <span class="hl or">Macro X-ray fluorescence (MA-XRF)</span> scans the full painting
+            surface with a motorized stage, generating per-pixel elemental maps at millimeter to
+            sub-millimeter resolution. A deep learning variant (Science Advances 2024) operates
+            at step sizes down to <span class="hl yl">50 micrometers</span>.
+            <a class="cite" href="https://doi.org/10.1126/sciadv.adp6234">[Alfeld et al. 2024]</a>
+          </p>
+
+          <h3 class="sub">Key Limitation</h3>
+          <p>
+            XRF detects elements, not compounds or organic materials. <span class="hl rd">Organic pigments</span>
+            (lakes, carbon black, organic yellows, indigo) are invisible to XRF because they
+            contain only C, H, O, N -- elements too light to produce detectable fluorescence above
+            background. Complementary techniques (Raman, FTIR, GC/MS) are required for a complete
+            material account.
+          </p>
+        </div>
+        <div>
+          <h3 class="sub">Authentication and Forgery Detection</h3>
+          <p>
+            MA-XRF scanning can reveal concealed paintings beneath the surface and resolve authenticity
+            questions in works attributed to old masters. A 2017 Microchemical Journal study applied
+            MA-XRF to two paintings under investigation -- one attributed to Francisco de Zurbar&aacute;n,
+            one to the Rubens workshop.
+            <a class="cite" href="https://doi.org/10.1016/j.microc.2017.09.018">[Saverwyns et al. 2017]</a>
+          </p>
+
+          <div class="result-row" style="border-left-color: var(--red);">
+            <div>
+              <div class="rlabel">Zurbar&aacute;n attribution</div>
+              <div style="font-size: 9px; color: #555; margin-top: 2px;">
+                MA-XRF detected anatase TiO2 and Pigment Green 8 --
+                both post-1921 synthetics. A 17th-c. attribution is ruled out.
+              </div>
+            </div>
+            <div class="rval" style="color: var(--red);">REJECTED</div>
+          </div>
+
+          <div class="result-row" style="border-left-color: var(--red);">
+            <div>
+              <div class="rlabel">Rubens workshop attribution</div>
+              <div style="font-size: 9px; color: #555; margin-top: 2px;">
+                Hidden canvas manufacturer's stamp detected beneath paint surface --
+                stamp dates the canvas to centuries after Rubens' death.
+              </div>
+            </div>
+            <div class="rval" style="color: var(--red);">REJECTED</div>
+          </div>
+
+          <p>
+            Neither stamp was visible in conventional X-radiography or infrared reflectography,
+            establishing MA-XRF's unique contribution to physical evidence of anachronism.
+          </p>
+
+          <h3 class="sub">Deep Learning XRF (2024)</h3>
+          <p>
+            Alfeld et al. (Science Advances 2024) trained a CNN on 500,000+ synthetic XRF spectra
+            generated by Monte Carlo simulation (XMI-MSIM software), covering 57 pigments and
+            compounds in a five-layer painting model. The network outputs estimates for
+            58 XRF spectral series. No real-world labeled training data was required.
+            Validated on two Raphael panel paintings from the Baronci Altarpiece (1500-1501):
+            "God the Father" (110 x 73 cm) and "Virgin Mary" (51 x 41 cm), scanned at step sizes
+            down to 50 micrometers. Identified vermillion, azurite, copper green, and lapis lazuli.
+            <a class="cite" href="https://doi.org/10.1126/sciadv.adp6234">[Alfeld et al. 2024]</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 // IRR / UV / X-RAY -->
+  <div class="gfull" id="sec-irr">
+    <div class="panel">
+      <div class="plabel">03 // Classical Imaging Methods</div>
+      <div class="g3" style="margin-top:10px;">
+        <div>
+          <div class="ptitle cy">Infrared Reflectography</div>
+          <div class="bar"></div>
+          <p>
+            IRR exploits the transparency of carbon-based drawing media (charcoal, black chalk,
+            ink) in the near-infrared (0.9-2.5 microns) while paint layers remain relatively opaque.
+            Underdrawings invisible to the eye become legible in reflected NIR imaging.
+          </p>
+          <p>
+            Key diagnostic: the presence, absence, or style of underdrawing distinguishes workshop
+            hands, reveals preparatory process, and can expose overpainted compositions (pentimenti).
+            Artists who changed composition significantly mid-execution -- Raphael, Leonardo, Rubens --
+            show dense pentimenti detectable by IRR.
+          </p>
+          <div class="math-block cy">
+            <div class="eq cy">lambda_NIR = 900 - 2500 nm</div>
+            <div style="color: var(--dim); font-size: 9px; margin-top: 4px;">
+              // carbon black absorbs across NIR; lead white reflects<br>
+              // InGaAs detector arrays optimized for 900-1700nm range
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="ptitle yl">X-Ray Radiography</div>
+          <div class="bar yl"></div>
+          <p>
+            Conventional X-radiography records differential attenuation of penetrating X-rays by
+            lead-bearing pigments (lead white, red lead, vermillion) relative to organic media and
+            light pigments. Dense regions appear bright; thin or organic areas appear dark.
+          </p>
+          <p>
+            Reveals: paint layer thickness and distribution, canvas weave, ground preparation,
+            repairs, relining, nail patterns (panel support dating), and compositional changes
+            where lead-rich underpaint differs from the surface layer.
+          </p>
+          <p>
+            Notable limitation: X-radiography is insensitive to <span class="hl rd">non-lead pigments</span>
+            and cannot resolve closely stacked layers. MA-XRF and neutron autoradiography
+            address this by providing elemental selectivity.
+          </p>
+        </div>
+        <div>
+          <div class="ptitle pu">UV Fluorescence</div>
+          <div class="bar pu"></div>
+          <p>
+            Ultraviolet illumination (310-380 nm) induces visible fluorescence in many organic
+            varnish layers, pigments, and binding media. Old natural resin varnishes fluoresce
+            greenish; modern synthetic restorer's varnishes appear dark or purple; retouched
+            areas appear as dark patches against the fluorescing original.
+          </p>
+          <p>
+            UV fluorescence is rapid, equipment-light, and is typically the first examination
+            step in conservation assessment. It cannot provide material identification on its
+            own -- it is a detection tool, not an identification tool.
+          </p>
+          <div class="method-meta">
+            <span class="tag pu">Conservation triage</span>
+            <span class="tag">Retouching detection</span>
+            <span class="tag">Varnish age</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 // NEUTRON AUTORADIOGRAPHY -->
+  <div class="gfull" id="sec-neutron">
+    <div class="panel">
+      <div class="plabel">04 // Neutron Autoradiography</div>
+      <div class="ptitle pu">Neutron Activation Analysis</div>
+      <div class="bar pu"></div>
+
+      <div class="g2" style="margin-top:10px;">
+        <div>
+          <h3 class="sub">Physics</h3>
+          <p>
+            Neutron autoradiography (NAA) exposes a painting to a thermal neutron flux in a
+            research reactor. Stable isotopes in paint pigments absorb neutrons and become
+            radioactive; they then emit <span class="hl pu">beta and gamma radiation</span> that
+            exposes film or imaging plates placed against the painting surface. Different
+            radioactive decay half-lives allow sequential imaging -- plates recorded at different
+            decay intervals reveal different elemental distributions.
+          </p>
+          <p>
+            Phosphorus (P-32, t1/2 = 14.3 days) decays quickly and reveals early images;
+            manganese (Mn-56, t1/2 = 2.58 h) decays immediately; arsenic (As-76, t1/2 = 26.3 h)
+            and antimony (Sb-122) are intermediate. This multi-exposure protocol provides
+            <span class="hl pu">layer-selective elemental maps</span> without cutting the painting.
+          </p>
+
+          <div class="math-block pu">
+            <div class="eq" style="color: var(--magenta);">A = sigma * phi * N</div>
+            <div style="color: var(--dim); font-size: 9px; margin-top: 4px;">
+              // A = activity (disintegrations/sec)<br>
+              // sigma = neutron capture cross-section (barns)<br>
+              // phi = neutron flux (n/cm^2/s)<br>
+              // N = number of target atoms in sample
+            </div>
+          </div>
+
+          <h3 class="sub">Key Limitation</h3>
+          <p>
+            The technique requires a nuclear research reactor. The Berlin neutron autoradiography
+            project ended in 2019 when the BER III reactor at Helmholtz-Zentrum Berlin was
+            permanently decommissioned. Ongoing access depends on institutions with active
+            research reactors willing to provide beam time.
+          </p>
+        </div>
+        <div>
+          <h3 class="sub">Landmark Institution: Staatliche Museen zu Berlin</h3>
+          <p>
+            The Gem&auml;ldegalerie neutron autoradiography project ran from 1983 to 2019,
+            a 36-year collaboration between the Gem&auml;ldegalerie, the Rathgen-Forschungslabor
+            (both Staatliche Museen zu Berlin), and Helmholtz-Zentrum Berlin (formerly
+            Hahn-Meitner-Institut). The project analyzed
+            <span class="hl yl">54 paintings</span> from the Gem&auml;ldegalerie collection,
+            including works by Titian, Rembrandt, and Vermeer.
+            <a class="cite" href="https://www.smb.museum/en/museums-institutions/gemaeldegalerie/collection-research/research/collaborative-project-on-using-neutron-autoradiography-to-investigate-and-analyse-paintings/">[SMB 2019]</a>
+          </p>
+
+          <div class="org-row">
+            <span class="org-row-label">Duration</span>
+            <span class="org-row-val" style="color: var(--magenta);">1983 -- 2019</span>
+          </div>
+          <div class="org-row">
+            <span class="org-row-label">Paintings analyzed</span>
+            <span class="org-row-val" style="color: var(--yellow);">54</span>
+          </div>
+          <div class="org-row">
+            <span class="org-row-label">Reactor facility</span>
+            <span class="org-row-val">BER III, Helmholtz-Zentrum Berlin</span>
+          </div>
+          <div class="org-row">
+            <span class="org-row-label">End of program</span>
+            <span class="org-row-val" style="color: var(--red);">Reactor decommissioned 2019</span>
+          </div>
+          <div class="org-row">
+            <span class="org-row-label">Artists studied</span>
+            <span class="org-row-val">Titian, Rembrandt, Vermeer</span>
+          </div>
+
+          <p style="margin-top: 10px;">
+            Active NAA programs continue at the neutron reactor facilities of MIT Lincoln Lab,
+            NIST Center for Neutron Research, and the Institut Laue-Langevin (Grenoble).
+            Access is competitive; turn-around times are measured in months.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 // DENDROCHRONOLOGY -->
+  <div class="gfull" id="sec-dendro">
+    <div class="panel">
+      <div class="plabel">05 // Dendrochronology</div>
+      <div class="ptitle or">Tree-Ring Dating of Panel Paintings</div>
+      <div class="bar or"></div>
+
+      <div class="g2" style="margin-top:10px;">
+        <div>
+          <h3 class="sub">Method</h3>
+          <p>
+            Panel paintings on oak and other hardwoods contain the annual growth rings of the
+            source tree embedded in the support material. Each ring's width reflects that year's
+            growing conditions; the <span class="hl or">ring-width series</span> forms a fingerprint
+            that can be matched against regional dendrochronological reference chronologies
+            extending back 2,000+ years for European oak.
+          </p>
+          <p>
+            Dating proceeds by measuring ring widths on the panel edge, constructing a floating
+            sequence, and statistically crossdating it (t-statistics, Gleichl&auml;ufigkeit)
+            against reference chronologies to anchor the sequence to a calendar year. The
+            <span class="hl yl">outermost preserved ring</span> gives a terminus post quem:
+            the earliest possible date for the painting (after allowing time for wood seasoning,
+            typically 2-10+ years).
+          </p>
+          <div class="math-block or">
+            <div class="eq" style="color: var(--orange);">t = (r * sqrt(n-2)) / sqrt(1-r^2)</div>
+            <div style="color: var(--dim); font-size: 9px; margin-top: 4px;">
+              // Baillie-Pilcher t-statistic for crossdating<br>
+              // r = Pearson correlation of ring-width series<br>
+              // n = number of overlapping rings<br>
+              // t > 3.5 conventionally significant; t > 5 strong match
+            </div>
+          </div>
+
+          <h3 class="sub">Reproducibility and Transparency</h3>
+          <p>
+            Dendrochronology is a reproducible science when protocols are rigorously applied --
+            the same ring sequence always crossdates to the same calendar position. However,
+            reports that provide only a final date without the supporting ring-width data,
+            reference chronologies used, and statistical crossdating values cannot be independently
+            verified.
+            <a class="cite" href="https://doi.org/10.1038/s41599-025-06066-2">[Dom&iacute;nguez-Delm&aacute;s 2025]</a>
+          </p>
+          <p>
+            As Dom&iacute;nguez-Delm&aacute;s (2025) writes: <span class="hl dim">"accepting the result becomes
+            an act of faith that reduces the science to an opaque black box."</span>
+            Full data transparency is a prerequisite for valid authentication use.
+          </p>
+        </div>
+        <div>
+          <h3 class="sub">Case Study: GNM Rembrandt Panel</h3>
+          <p>
+            A 2025 replication study by Dom&iacute;nguez-Delm&aacute;s (Nature / Humanities and Social Sciences
+            Communications) re-examined the oak panel support of a painting attributed to Rembrandt
+            in the Germanisches Nationalmuseum, Nuremberg (GNM).
+            <a class="cite" href="https://doi.org/10.1038/s41599-025-06066-2">[Dom&iacute;nguez-Delm&aacute;s 2025]</a>
+          </p>
+
+          <div class="org-row">
+            <span class="org-row-label">Total rings (GNM panel)</span>
+            <span class="org-row-val" style="color: var(--orange);">210</span>
+          </div>
+          <div class="org-row">
+            <span class="org-row-label">Outermost ring date</span>
+            <span class="org-row-val" style="color: var(--yellow);">1606 CE</span>
+          </div>
+          <div class="org-row">
+            <span class="org-row-label">Estimated production window</span>
+            <span class="org-row-val">1617 -- 1635</span>
+          </div>
+          <div class="org-row">
+            <span class="org-row-label">Match to Rijksmuseum panel</span>
+            <span class="org-row-val" style="color: var(--cyan);">Same source tree</span>
+          </div>
+          <div class="org-row">
+            <span class="org-row-label">Rijksmuseum accession</span>
+            <span class="org-row-val">SK-A-3934</span>
+          </div>
+
+          <p style="margin-top: 10px;">
+            The replication also identified two errors in Klein's original 1990s measurements of
+            the same panel: one ring was missing from the series and one ring was
+            counted twice in the early portion of the sequence. Despite these measurement errors,
+            the overall dating conclusion was confirmed -- demonstrating both the robustness of
+            the crossdating statistical framework and the importance of independent replication.
+          </p>
+
+          <div class="method-meta">
+            <span class="tag or">Non-invasive</span>
+            <span class="tag">Terminus post quem only</span>
+            <span class="tag rd">Requires open data</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06 // GC/MS -->
+  <div class="gfull" id="sec-gcms">
+    <div class="panel">
+      <div class="plabel">06 // Gas Chromatography / Mass Spectrometry</div>
+      <div class="ptitle yl">Paint Medium Analysis</div>
+      <div class="bar yl"></div>
+
+      <div class="g2" style="margin-top:10px;">
+        <div>
+          <h3 class="sub">Chemistry and Protocol</h3>
+          <p>
+            Paint binding media (drying oils, egg tempera, proteinaceous glues, resin varnishes)
+            are organic molecules degraded by age, light, and heat into characteristic breakdown
+            products. GC/MS hydrolysis-based analysis converts these polymeric binders into
+            monomers -- <span class="hl yl">fatty acids</span> from oils,
+            <span class="hl yl">amino acids</span> from proteins -- which are
+            then separated by gas chromatography and identified by mass spectrometry.
+          </p>
+          <p>
+            The technique requires <span class="hl rd">micro-sampling</span>: typically 50-500 micrograms
+            extracted with a needle or scalpel from areas of existing damage or loss.
+            It is therefore not non-invasive, but samples at the microgram level are
+            effectively invisible and ethically accepted for authentication.
+          </p>
+
+          <div class="math-block">
+            <div class="eq">P/S ratio = palmitic / stearic acid peak area</div>
+            <div style="color: var(--dim); font-size: 9px; margin-top: 4px;">
+              // P/S ~1.5 = walnut or poppy oil<br>
+              // P/S ~2.0 = linseed oil (typical ground)<br>
+              // elevated dicarboxylic acids = late-stage oxidative crosslinking
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 class="sub">Amino Acid Derivatization: Solvent Optimization</h3>
+          <p>
+            Amino acid analysis by GC/MS requires derivatization (typically silylation with
+            MTBSTFA) to increase analyte volatility. Fico et al. (2018) demonstrated that
+            replacing pyridine with <span class="hl yl">anhydrous dimethylformamide (DMF)</span>
+            as the derivatization solvent significantly improves calibration linearity for
+            proline and hydroxyproline -- the two diagnostic amino acids for collagen-based
+            and egg-based paint media.
+            <a class="cite" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5902064/">[Fico et al. 2018]</a>
+          </p>
+
+          <div class="result-row" style="border-left-color: var(--yellow);">
+            <div>
+              <div class="rlabel">Proline r² (pyridine)</div>
+            </div>
+            <div class="rval" style="color: #888; font-size: 18px;">0.89</div>
+          </div>
+          <div class="result-row" style="border-left-color: var(--yellow);">
+            <div>
+              <div class="rlabel">Proline r² (DMF) -- improved</div>
+            </div>
+            <div class="rval">0.99</div>
+          </div>
+          <div class="result-row" style="border-left-color: var(--orange);">
+            <div>
+              <div class="rlabel">Hydroxyproline r² (pyridine)</div>
+            </div>
+            <div class="rval" style="color: #888; font-size: 18px;">0.72</div>
+          </div>
+          <div class="result-row" style="border-left-color: var(--orange);">
+            <div>
+              <div class="rlabel">Hydroxyproline r² (DMF) -- improved</div>
+            </div>
+            <div class="rval">0.95</div>
+          </div>
+
+          <p style="margin-top: 8px;">
+            Pyridine can retard MTBSTFA silylation and generate side-reaction artifacts for
+            hydrophilic amino acids. The DMF improvement is particularly significant for
+            distinguishing <span class="hl yl">collagen</span> (animal glue sizing) from
+            <span class="hl yl">egg albumen or yolk</span> -- both identifiable by their
+            characteristic hydroxyproline content.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 07 // RAMAN / ADDITIONAL METHODS -->
+  <div class="g2">
+    <div class="panel">
+      <div class="plabel">07a // Raman Spectroscopy</div>
+      <div class="ptitle cy">Molecular Fingerprinting</div>
+      <div class="bar"></div>
+      <p>
+        Raman spectroscopy irradiates the painting surface with a monochromatic laser;
+        inelastic scattering of photons produces frequency shifts (Stokes/anti-Stokes bands)
+        characteristic of specific molecular vibrational modes. Each pigment has a
+        <span class="hl">Raman fingerprint</span> that is unambiguous at the molecular level.
+      </p>
+      <p>
+        Key advantage over XRF: Raman identifies compounds and molecular structure, not just
+        elements. It can distinguish hematite from red ochre, malachite from verdigris,
+        and -- critically -- detect <span class="hl">organic pigments</span> (ultramarine,
+        indigo, organic lake pigments) that are XRF-invisible.
+      </p>
+      <p>
+        Micro-Raman allows point analysis at 1-5 micron spatial resolution. Portable Raman
+        systems (e.g., Renishaw, B&amp;W Tek) enable in-situ museum analysis without transport.
+        Key limitation: <span class="hl rd">fluorescence interference</span> from aged varnish
+        can swamp the Raman signal; NIR lasers (785 nm, 1064 nm) mitigate this.
+      </p>
+      <div class="method-meta">
+        <span class="tag cy">Non-invasive (fiber optic probe)</span>
+        <span class="tag yl">Organic pigments</span>
+        <span class="tag">Point analysis only</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="plabel">07b // Digital Microscopy and FORS</div>
+      <div class="ptitle or">Surface and Optical Methods</div>
+      <div class="bar or"></div>
+      <p>
+        <span class="hl or">Digital microscopy</span> (10-400x) reveals paint surface texture,
+        impasto, craquelure pattern (age crack networks), abrasion, and retouching at a scale
+        not visible to the naked eye. Craquelure age and pattern can distinguish 17th-century
+        paint films (characteristic island cracking) from 20th-century imitations.
+      </p>
+      <p>
+        <span class="hl or">Fiber optic reflectance spectroscopy (FORS)</span> is a portable
+        point spectroscopy method covering 350-2500 nm. It produces the same reflectance curve
+        used in MSI/HSI but at a single spatial point. Used for rapid in-gallery triage,
+        varnish characterization, and spot verification before committing to full imaging.
+      </p>
+      <p>
+        <span class="hl or">OCT (optical coherence tomography)</span> is an emerging method
+        providing cross-sectional depth profiling of paint layers at micron resolution without
+        sampling -- analogous to medical ultrasound but at optical wavelengths. Currently
+        limited to transparent or semi-transparent layers (varnish, glazes).
+      </p>
+    </div>
+  </div>
+
+  <!-- 08 // AI/ML METHODS -->
+  <div class="gfull" id="sec-ml">
+    <div class="panel">
+      <div class="plabel">08 // AI and Machine Learning Methods</div>
+      <div class="ptitle cy">Computational Pigment Analysis</div>
+      <div class="bar"></div>
+
+      <div class="g3" style="margin-top:10px;">
+        <div>
+          <h3 class="sub">1D-CNN vs. SVM (Hyperspectral)</h3>
+          <p>
+            For per-pixel pigment classification from hyperspectral data, 1D convolutional neural
+            networks operating on the spectral dimension outperform conventional spectral classifiers.
+            Kleynhans et al. (2023) demonstrated on the 14th-century illuminated manuscript
+            Laudario di Sant'Agnese (c. 1340):
+            <a class="cite" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10006919/">[PMC10006919]</a>
+          </p>
+          <div class="result-row">
+            <div>
+              <div class="rlabel">1D-CNN vs. SAM margin</div>
+            </div>
+            <div class="rval" style="color: var(--cyan);">+2.1%</div>
+          </div>
+          <div class="result-row">
+            <div>
+              <div class="rlabel">1D-CNN vs. SVM margin</div>
+            </div>
+            <div class="rval">+6.4%</div>
+          </div>
+          <p style="margin-top: 6px; font-size: 10px; color: #666;">
+            Test set: 25 paint classes, 16,683 spectra across 4 paintings.
+            VNIR hyperspectral data. 10-fold cross-validation.
+          </p>
+          <p>
+            Neural networks applied to hyperspectral data also improve visibility of
+            <span class="hl">pentimenti and underdrawings</span>. Striova et al. (2018) applied
+            an ANN to multispectral data of Manet and Titian paintings and demonstrated
+            improved pentimenti visibility.
+            <a class="cite" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10006919/">[PMC10006919]</a>
+          </p>
+        </div>
+        <div>
+          <h3 class="sub">Spectral Unmixing (Quantitative)</h3>
+          <p>
+            Beyond presence/absence classification, hyperspectral neural networks can perform
+            <span class="hl pu">Paint Component Unmixing</span>: quantitatively decomposing
+            a pixel spectrum into its constituent pigment components (a regression task,
+            not a classification task). Output is a per-pixel abundance map for each
+            pigment -- analogous to a concentration map.
+            <a class="cite" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10006919/">[PMC10006919]</a>
+          </p>
+          <div class="math-block pu">
+            <div class="eq" style="color: var(--magenta);">pixel_spectrum = SUM( a_i * R_i(lambda) )</div>
+            <div style="color: var(--dim); font-size: 9px; margin-top: 4px;">
+              // a_i = abundance (mixing coefficient) for pigment i<br>
+              // R_i(lambda) = pure pigment reflectance spectrum<br>
+              // linear mixing model: valid for optically thin layers<br>
+              // non-linear extensions required for opaque layer stacks
+            </div>
+          </div>
+          <p>
+            Fukumoto et al.'s encoder-decoder architecture with a KM-model decoder estimates
+            both pigment thickness and mixing ratio per pixel from spectral data.
+            Rohani et al.'s two-branch network yields semi-quantitative abundance mapping.
+          </p>
+          <p>
+            Caution: real-painting accuracy is lower than synthetic-data benchmarks.
+            Scarcity of labeled real-painting training data remains the field's primary bottleneck.
+          </p>
+        </div>
+        <div>
+          <h3 class="sub">CNN on Synthetic XRF (MA-XRF)</h3>
+          <p>
+            Jones et al. (npj Heritage Science 2022) trained CNNs on artificially generated XRF
+            spectra using the Fundamental Parameter (FP) method, covering 15 pigment classes
+            with a synthetic dataset of 3,000 spectra. Initial accuracy on synthetic data was
+            100%, but dropped to ~55% on real historical spectra due to spectral variation.
+            Transfer learning (retraining the final layer with real spectra) recovered
+            performance to ~96%.
+            <a class="cite" href="https://doi.org/10.1038/s40494-022-00716-3">[Jones et al. 2022]</a>
+          </p>
+          <p>
+            The Alfeld et al. (2024) approach scales this dramatically: 500,000+ Monte Carlo
+            synthetic spectra, 57 pigments, five-layer painting model -- no real-world labeled
+            data required.
+            <a class="cite" href="https://doi.org/10.1126/sciadv.adp6234">[Alfeld et al. 2024]</a>
+          </p>
+          <div class="method-meta">
+            <span class="tag yl">Transfer learning</span>
+            <span class="tag cy">Monte Carlo synthesis</span>
+            <span class="tag">FP method</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 09 // ATTRIBUTION ML -->
+  <div class="gfull" id="sec-auth">
+    <div class="panel">
+      <div class="plabel">09 // Computational Attribution</div>
+      <div class="ptitle cy">Deep Learning for Artist Attribution</div>
+      <div class="bar"></div>
+
+      <div class="g2" style="margin-top:10px;">
+        <div>
+          <h3 class="sub">ResNet50 + SVM Pipeline (Raphael Study)</h3>
+          <p>
+            Ugail et al. (npj Heritage Science 2023) developed a hybrid attribution architecture:
+            <span class="hl">ResNet50</span> pretrained on ImageNet with the top fully connected
+            layer removed, feeding extracted deep features into a
+            <span class="hl">linear-kernel SVM</span> binary classifier
+            (Raphael vs. non-Raphael). This hybrid design -- deep learning for feature extraction,
+            conventional ML for classification -- is intentional: the SVM provides a more
+            interpretable decision boundary than an end-to-end neural classifier.
+            <a class="cite" href="https://doi.org/10.1186/s40494-023-01094-0">[Ugail et al. 2023]</a>
+          </p>
+          <div class="math-block cy">
+            <div class="eq cy">f(x) = SIGN( w^T * phi(x) + b )</div>
+            <div style="color: var(--dim); font-size: 9px; margin-top: 4px;">
+              // x = painting image<br>
+              // phi(x) = ResNet50 feature vector (last conv layer)<br>
+              // w, b = SVM hyperplane learned on training set<br>
+              // linear kernel: no additional hyperparameter gamma
+            </div>
+          </div>
+          <p>
+            The model was applied to "Madonna della rosa" to assess sole vs. workshop authorship.
+            The paper interprets the result as evidence of possible workshop/assistant collaboration
+            rather than sole Raphael authorship -- consistent with art-historical accounts of
+            Raphael's large workshop production ca. 1518.
+          </p>
+        </div>
+        <div>
+          <h3 class="sub">Scope, Limitations, and Verification Status</h3>
+          <p>
+            The specific accuracy figures for this pipeline (98% binary classification) and the
+            exact probability output for "Madonna della rosa" (0.57) could not be independently
+            verified through the adversarial review process and are therefore excluded from
+            this reference. The architectural description -- ResNet50 feature extraction plus
+            linear-kernel SVM -- is confirmed.
+          </p>
+          <p>
+            Broader limitations of computational attribution:
+          </p>
+          <ul class="spec">
+            <li>Training set size is severely constrained for old-master authentication</li>
+            <li>Authenticated training data may itself contain misattributions</li>
+            <li>Stylistic features learned by CNNs are not directly interpretable as artistic decisions</li>
+            <li>Photographic reproduction quality, varnish state, and color calibration all introduce noise</li>
+            <li>Binary classification (Raphael / not-Raphael) cannot model workshop continua</li>
+          </ul>
+
+          <h3 class="sub">State of the Field (2025)</h3>
+          <p>
+            npj Heritage Science published a state-of-the-art review of deep learning for
+            MA-XRF in 2025 (DOI 10.1038/s40494-025-01924-3), covering both spectral unmixing
+            and pigment classification. The consensus: synthetic training data generation
+            (Monte Carlo, FP method) combined with transfer learning is the most viable
+            approach given the scarcity of labeled real-painting data. Physics-informed
+            architectures are promising but have not yet demonstrated superiority over purely
+            data-driven methods on benchmark real-painting datasets.
+            <a class="cite" href="https://doi.org/10.1038/s40494-025-01924-3">[npj Heritage Science 2025]</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10 // METHOD COMPARISON TABLE -->
+  <div class="gfull">
+    <div class="panel">
+      <div class="plabel">10 // Method Comparison Matrix</div>
+      <div class="ptitle">Technique Reference Table</div>
+      <div class="bar yl"></div>
+
+      <div style="overflow-x: auto; margin-top: 10px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border2);">
+              <th style="text-align: left; padding: 6px 8px; color: var(--dim); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-weight: 400; width: 140px;">Method</th>
+              <th style="text-align: left; padding: 6px 8px; color: var(--dim); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-weight: 400;">Detects</th>
+              <th style="text-align: left; padding: 6px 8px; color: var(--dim); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-weight: 400;">Sampling</th>
+              <th style="text-align: left; padding: 6px 8px; color: var(--dim); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-weight: 400;">Scale</th>
+              <th style="text-align: left; padding: 6px 8px; color: var(--dim); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-weight: 400;">Key Limitation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid #111;">
+              <td style="padding: 5px 8px; color: var(--cyan);">Multispectral / HSI</td>
+              <td style="padding: 5px 8px;">Pigments, underdrawings, pentimenti</td>
+              <td style="padding: 5px 8px;"><span class="tag gr">None</span></td>
+              <td style="padding: 5px 8px;">Full surface</td>
+              <td style="padding: 5px 8px;">Weak for organic pigments</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #111;">
+              <td style="padding: 5px 8px; color: var(--orange);">MA-XRF</td>
+              <td style="padding: 5px 8px;">Element distribution, hidden layers</td>
+              <td style="padding: 5px 8px;"><span class="tag gr">None</span></td>
+              <td style="padding: 5px 8px;">Full surface</td>
+              <td style="padding: 5px 8px;">Organic pigments invisible</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #111;">
+              <td style="padding: 5px 8px; color: var(--bright);">X-Radiography</td>
+              <td style="padding: 5px 8px;">Lead pigments, canvas, repairs</td>
+              <td style="padding: 5px 8px;"><span class="tag gr">None</span></td>
+              <td style="padding: 5px 8px;">Full surface</td>
+              <td style="padding: 5px 8px;">Non-lead pigments invisible</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #111;">
+              <td style="padding: 5px 8px; color: var(--bright);">IRR</td>
+              <td style="padding: 5px 8px;">Underdrawings, pentimenti, carbon media</td>
+              <td style="padding: 5px 8px;"><span class="tag gr">None</span></td>
+              <td style="padding: 5px 8px;">Full surface</td>
+              <td style="padding: 5px 8px;">Metal-based drawings invisible</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #111;">
+              <td style="padding: 5px 8px; color: var(--magenta);">UV Fluorescence</td>
+              <td style="padding: 5px 8px;">Varnish age, retouching, repairs</td>
+              <td style="padding: 5px 8px;"><span class="tag gr">None</span></td>
+              <td style="padding: 5px 8px;">Full surface</td>
+              <td style="padding: 5px 8px;">Detection only, no ID</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #111;">
+              <td style="padding: 5px 8px; color: var(--cyan);">Raman Spectroscopy</td>
+              <td style="padding: 5px 8px;">Molecular ID, organic + inorganic pigments</td>
+              <td style="padding: 5px 8px;"><span class="tag gr">None (fiber probe)</span></td>
+              <td style="padding: 5px 8px;">Point (1-5 um)</td>
+              <td style="padding: 5px 8px;">Fluorescence interference</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #111;">
+              <td style="padding: 5px 8px; color: var(--magenta);">Neutron Autoradiography</td>
+              <td style="padding: 5px 8px;">Multi-layer elemental maps, brushwork</td>
+              <td style="padding: 5px 8px;"><span class="tag gr">None</span></td>
+              <td style="padding: 5px 8px;">Full surface</td>
+              <td style="padding: 5px 8px;">Requires research reactor</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #111;">
+              <td style="padding: 5px 8px; color: var(--orange);">Dendrochronology</td>
+              <td style="padding: 5px 8px;">Panel date, provenance, wood match</td>
+              <td style="padding: 5px 8px;"><span class="tag rd">Panel edge only</span></td>
+              <td style="padding: 5px 8px;">Macro (panel)</td>
+              <td style="padding: 5px 8px;">Canvas paintings excluded; TPQ only</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #111;">
+              <td style="padding: 5px 8px; color: var(--yellow);">GC/MS</td>
+              <td style="padding: 5px 8px;">Binding medium (oil, egg, glue, resin)</td>
+              <td style="padding: 5px 8px;"><span class="tag rd">Micro-sample required</span></td>
+              <td style="padding: 5px 8px;">Point</td>
+              <td style="padding: 5px 8px;">Invasive; aged samples may be ambiguous</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11 // REFUTED CLAIMS (TRANSPARENCY) -->
+  <div class="gfull">
+    <div class="panel">
+      <div class="plabel">11 // Adversarial Review: Refuted Claims</div>
+      <div class="ptitle rd">Claims That Did Not Survive Verification</div>
+      <div class="bar rd"></div>
+      <p>
+        The following claims were submitted to three-vote adversarial verification and rejected
+        (0-3 or 1-2 vote). They appear here for transparency. Do not cite these as established
+        findings.
+      </p>
+      <div class="refuted-row">
+        <span class="vote-tag">0-3</span>
+        Physics-based autoencoder (Shitomi et al.) outperforms supervised approaches for pigment thickness/mixing ratio estimation from visible-range spectral data.
+      </div>
+      <div class="refuted-row">
+        <span class="vote-tag">0-3</span>
+        Deep generative network on hyperspectral data can estimate spectral reflectance for unvarnished appearance (virtual cleaning).
+      </div>
+      <div class="refuted-row">
+        <span class="vote-tag">0-3</span>
+        1D-CNN trained on ~300,000 spectra from well-characterized paintings achieved 98.7% mean per-class accuracy -- superior to training on pure-pigment spectral databases.
+      </div>
+      <div class="refuted-row">
+        <span class="vote-tag">0-3</span>
+        CNN outperforms conventional spectral deconvolution at low photon counts (70 net counts) and produces zero false-positive net counts for absent elements.
+      </div>
+      <div class="refuted-row">
+        <span class="vote-tag">0-3</span>
+        ResNet50 + SVM pipeline achieved 98% accuracy in binary Raphael / non-Raphael classification.
+      </div>
+      <div class="refuted-row">
+        <span class="vote-tag">0-3</span>
+        "Madonna della rosa" scored 0.57 probability of sole Raphael authorship in the Ugail et al. pipeline.
+      </div>
+      <div class="refuted-row">
+        <span class="vote-tag">0-3</span>
+        Neutron autoradiography allows simultaneous visualization of multiple paint layers in a single examination (multi-layer in one exposure).
+      </div>
+    </div>
+  </div>
+
+  <!-- 12 // BIBLIOGRAPHY -->
+  <div class="gfull" id="sec-bib">
+    <div class="panel">
+      <div class="plabel">12 // Bibliography</div>
+      <div class="ptitle">Primary Literature</div>
+      <div class="bar yl"></div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Liang 2011]</span>
+        Haida Liang. "Advances in multispectral and hyperspectral imaging for archaeology and art conservation."
+        <em>Applied Physics A</em> 106 (2012), 309-323.
+        <div class="bib-doi">DOI: <a href="https://doi.org/10.1007/s00339-011-6689-1">10.1007/s00339-011-6689-1</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Baronti 1998]</span>
+        S. Baronti, A. Casini, F. Lotti, S. Porcinai. "Multispectral imaging system for the mapping of pigments in works of art by use of principal-component analysis."
+        <em>Applied Optics</em> 37(8) (1998), 1299-1309.
+        <div class="bib-doi">PubMed: 18268717</div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Striova 2018]</span>
+        J. Striova, A. Dal Fovo, R. Fontana. "Spectral imaging in cultural heritage: from UV to terahertz."
+        <em>Angewandte Chemie International Edition</em> 57 (2018).
+        <div class="bib-doi">Via review: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10006919/">PMC10006919</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Kleynhans 2023]</span>
+        T. Kleynhans, K.A. Schmidt Patterson, D. Messinger, C. Delaney. "An alternative approach to mapping pigments in paintings with hyperspectral reflectance image cubes using artificial neural networks."
+        <em>Sensors</em> (2023).
+        <div class="bib-doi"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10006919/">PMC10006919</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Saverwyns 2017]</span>
+        S. Saverwyns, C. Currie, E. Lamas-Delgado. "Macro X-ray fluorescence scanning (MA-XRF) as tool in the authentication of paintings."
+        <em>Microchemical Journal</em> 137 (2017), 139-147.
+        <div class="bib-doi">DOI: <a href="https://doi.org/10.1016/j.microc.2017.09.018">10.1016/j.microc.2017.09.018</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Alfeld 2024]</span>
+        M. Alfeld et al. "Deep learning-based quantitative MA-XRF analysis of paintings."
+        <em>Science Advances</em> 10 (2024), eadp6234.
+        <div class="bib-doi">DOI: <a href="https://doi.org/10.1126/sciadv.adp6234">10.1126/sciadv.adp6234</a> | PMC: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11423876/">PMC11423876</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Jones 2022]</span>
+        L. Jones et al. "Machine learning for X-ray fluorescence spectroscopy for the identification of pigments in works of art."
+        <em>npj Heritage Science</em> (2022).
+        <div class="bib-doi">DOI: <a href="https://doi.org/10.1038/s40494-022-00716-3">10.1038/s40494-022-00716-3</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[npjHS 2025]</span>
+        State-of-the-art review: deep learning for MA-XRF.
+        <em>npj Heritage Science</em> (2025).
+        <div class="bib-doi">DOI: <a href="https://doi.org/10.1038/s40494-025-01924-3">10.1038/s40494-025-01924-3</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Ugail 2023]</span>
+        H. Ugail et al. "Is the Raphael 'Madonna della Rosa' painted by Raphael? A machine learning analysis."
+        <em>npj Heritage Science</em> 11 (2023), 210.
+        <div class="bib-doi">DOI: <a href="https://doi.org/10.1186/s40494-023-01094-0">10.1186/s40494-023-01094-0</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[SMB 2019]</span>
+        Staatliche Museen zu Berlin. "Collaborative project on using neutron autoradiography to investigate and analyse paintings." Gem&auml;ldegalerie project documentation.
+        <div class="bib-doi"><a href="https://www.smb.museum/en/museums-institutions/gemaeldegalerie/collection-research/research/collaborative-project-on-using-neutron-autoradiography-to-investigate-and-analyse-paintings/">smb.museum</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Dom 2025]</span>
+        M. Dom&iacute;nguez-Delm&aacute;s. "Replication study of dendrochronological analysis of a Rembrandt panel: GNM and Rijksmuseum."
+        <em>Humanities and Social Sciences Communications</em> 12 (2025).
+        <div class="bib-doi">DOI: <a href="https://doi.org/10.1038/s41599-025-06066-2">10.1038/s41599-025-06066-2</a> | PMC: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12629980/">PMC12629980</a></div>
+      </div>
+
+      <div class="bib-entry">
+        <span class="bib-ref">[Fico 2018]</span>
+        G. Fico, E. Ferretti, D. Ferretti. "GC-MS analysis of paint binding media: comparison of derivatization solvents for amino acid analysis."
+        <em>Journal of Analytical Methods in Chemistry</em> (2018).
+        <div class="bib-doi">PMC: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5902064/">PMC5902064</a></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>ChromaScope // Scientific Methods Reference // Peer-Reviewed Literature // 2025-2026</span>
+    <span>BRUTALIST TERMINAL // HED0RAH</span>
+  </div>
+
+</body>
+</html>
