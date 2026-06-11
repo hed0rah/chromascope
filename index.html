@@ -2232,6 +2232,18 @@ window.addEventListener('resize', () => {
   resizeTimer = setTimeout(() => { resizeCanvases(); clampPan(); render(); if (geoState.active) geoRedrawOverlay(); }, 100);
 });
 
+// the viewport is a 1fr grid row; layout changes (compare strip growing, etc.)
+// resize it without firing a window resize, leaving the canvas backing store
+// stale and the overlay's clearRect short of the bottom edge (tracer artifacts).
+let lastVpW = 0, lastVpH = 0;
+new ResizeObserver(() => {
+  if (!state.src) return;
+  const r = viewport.getBoundingClientRect();
+  if (r.width === lastVpW && r.height === lastVpH) return;
+  lastVpW = r.width; lastVpH = r.height;
+  resizeCanvases(); clampPan(); render(); if (geoState.active) geoRedrawOverlay();
+}).observe(viewport);
+
 setTool('select');
 booted = true;
 
