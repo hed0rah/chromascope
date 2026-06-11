@@ -1,46 +1,14 @@
-# Source paintings and other heavy assets stay out of git -- they belong
-# in a per-deployment fork or a private fork. ArtScope is the engine, not
-# the museum.
-
-# Painting source images (copyrighted -- keep out of public repo)
+# only index.html is published
 art/
-assets/*.jpg
-assets/*.jpeg
-assets/*.png
-assets/*.tif
-assets/*.tiff
-assets/*.webp
-
-# DZI tile pyramids
-assets/*.dzi
-assets/*_files/
-
-# Per-painting generated thumbnails (regenerable via build_assets.py)
-assets/pigments/
-assets/hotspots/
-assets/analysis_*.jpg
-
-# Per-painting config (the schema template stays in repo)
-painting.json
-
-# note: index.html is the ChromaScope studio (the deliverable), so it is tracked.
-# the ArtScope engine's per-painting forensic page uses index.template.html instead.
-
-# Python / common
+Research/
+*.md
+*.json
+*.html.template
+index.template.html
+painting.template.json
 __pycache__/
 *.pyc
 .venv/
-venv/
-.python-version
-
-# Editor / OS detritus
-.vscode/
-.idea/
 .DS_Store
 Thumbs.db
-*.swp
-
-# Build / serve scratch
-.cache/
 node_modules/
-dist/
