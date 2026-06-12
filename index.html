@@ -290,6 +290,7 @@ kbd {
 .viewport.tool-inspect { cursor: crosshair; }
 .viewport.tool-measure { cursor: crosshair; }
 .viewport.tool-pick { cursor: crosshair; }
+.viewport.tool-loupe { cursor: none; }
 .viewport.geo-tool-pan    { cursor: grab; }
 .viewport.geo-tool-select { cursor: default; }
 .viewport.geo-tool-move   { cursor: move; }
@@ -836,6 +837,7 @@ kbd {
       <div class="about-row"><span class="lbl">inspect pixel</span><span class="key">I</span></div>
       <div class="about-row"><span class="lbl">measure distance</span><span class="key">M</span></div>
       <div class="about-row"><span class="lbl">eyedropper</span><span class="key">P</span></div>
+      <div class="about-row"><span class="lbl">magnifier loupe</span><span class="key">G · [ ] power</span></div>
       <hr class="about-divider">
       <div class="about-row"><span class="lbl">zoom</span><span class="key">wheel · ± · 0 fit · 1:1</span></div>
       <div class="about-row"><span class="lbl">load</span><span class="key">drag · paste · url</span></div>
@@ -873,6 +875,9 @@ kbd {
       </button>
       <button class="tool" data-tool="pick" title="Eyedropper (P)" aria-label="Pick">
         <svg viewBox="0 0 24 24"><path d="M19 5a2 2 0 00-3 0l-1.5 1.5-1-1-1.5 1.5 1 1L4 17v3h3l9-9 1 1 1.5-1.5-1-1L19 8a2 2 0 000-3z"/></svg>
+      </button>
+      <button class="tool" data-tool="loupe" title="Magnifier loupe (G)" aria-label="Loupe">
+        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5l-4-4"/><path d="M8 9h5M8 12h5M10.5 7.5v6"/></svg>
       </button>
       <div class="rail-sep"></div>
       <button class="tool" data-act="zoom-in" title="Zoom in (+)" aria-label="Zoom in">
@@ -1164,6 +1169,8 @@ const state = {
   regionCounter: 0,
   measure: null,                  // {a:{x,y}, b:{x,y}} in internal px
   hover: null,                    // {x,y} internal px
+  loupe: null,                    // {x,y} viewport (CSS px) cursor pos while loupe tool active
+  loupeZoom: 8,                   // loupe magnification relative to current view scale
   filename: 'image',
 };
 let dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -1440,6 +1447,83 @@ function renderOverlay() {
     }
     if (state.measure.b) drawMeasureLabel(a, b);
   }
+
+  // magnifier loupe (drawn last so it floats above everything)
+  if (state.tool === 'loupe' && state.loupe) drawLoupe(accent);
+}
+function drawLoupe(accent) {
+  const cx = state.loupe.x, cy = state.loupe.y;
+  const R = 74;
+  const ls = Math.min(state.maxScale, state.view.scale * state.loupeZoom);
+  const drawSrc = fxState.active ? state.fx : state.src;
+  const sp = screenToSrc(cx, cy);               // source point under the cursor
+  const ox = cx - sp.x * ls, oy = cy - sp.y * ls; // src->screen origin at loupe scale
+
+  overlayCtx.save();
+  overlayCtx.beginPath();
+  overlayCtx.arc(cx, cy, R, 0, Math.PI * 2);
+  overlayCtx.clip();
+
+  // backdrop for transparent / out-of-image areas
+  overlayCtx.fillStyle = cssVar('--bg') || '#0a0a0a';
+  overlayCtx.fillRect(cx - R, cy - R, R * 2, R * 2);
+
+  // magnified image (matches the displayed CSS filter)
+  overlayCtx.imageSmoothingEnabled = ls < 3.5;
+  overlayCtx.filter = fxState.css || 'none';
+  overlayCtx.save();
+  overlayCtx.translate(ox, oy);
+  overlayCtx.scale(ls, ls);
+  overlayCtx.drawImage(drawSrc, 0, 0);
+  overlayCtx.restore();
+  overlayCtx.filter = 'none';
+
+  // pixel grid + sampled-pixel box when magnified enough to read pixels
+  if (ls >= 6) {
+    overlayCtx.lineWidth = 1;
+    overlayCtx.strokeStyle = 'rgba(128,128,128,0.18)';
+    overlayCtx.beginPath();
+    const x0 = Math.floor((cx - R - ox) / ls), x1 = Math.ceil((cx + R - ox) / ls);
+    const y0 = Math.floor((cy - R - oy) / ls), y1 = Math.ceil((cy + R - oy) / ls);
+    for (let gx = x0; gx <= x1; gx++) { const sx = gx * ls + ox; overlayCtx.moveTo(sx, cy - R); overlayCtx.lineTo(sx, cy + R); }
+    for (let gy = y0; gy <= y1; gy++) { const sy = gy * ls + oy; overlayCtx.moveTo(cx - R, sy); overlayCtx.lineTo(cx + R, sy); }
+    overlayCtx.stroke();
+    // highlight the exact pixel under the crosshair
+    const px = Math.floor(sp.x), py = Math.floor(sp.y);
+    overlayCtx.lineWidth = 1.5;
+    overlayCtx.strokeStyle = 'rgba(255,255,255,0.9)';
+    overlayCtx.strokeRect(px * ls + ox + 0.5, py * ls + oy + 0.5, ls, ls);
+  }
+  overlayCtx.restore();
+
+  // lens chrome: dark outer stroke + accent ring
+  overlayCtx.lineWidth = 3;
+  overlayCtx.strokeStyle = 'rgba(0,0,0,0.55)';
+  overlayCtx.beginPath(); overlayCtx.arc(cx, cy, R + 1, 0, Math.PI * 2); overlayCtx.stroke();
+  overlayCtx.lineWidth = 1.5;
+  overlayCtx.strokeStyle = accent;
+  overlayCtx.beginPath(); overlayCtx.arc(cx, cy, R, 0, Math.PI * 2); overlayCtx.stroke();
+
+  // center crosshair (gap in the middle so the sampled pixel stays visible)
+  overlayCtx.lineWidth = 1;
+  overlayCtx.strokeStyle = accent;
+  overlayCtx.beginPath();
+  overlayCtx.moveTo(cx - 9, cy); overlayCtx.lineTo(cx - 3, cy);
+  overlayCtx.moveTo(cx + 3, cy); overlayCtx.lineTo(cx + 9, cy);
+  overlayCtx.moveTo(cx, cy - 9); overlayCtx.lineTo(cx, cy - 3);
+  overlayCtx.moveTo(cx, cy + 3); overlayCtx.lineTo(cx, cy + 9);
+  overlayCtx.stroke();
+
+  // power readout chip below the lens
+  const lbl = state.loupeZoom + '×';
+  overlayCtx.font = '10px "IBM Plex Mono", ui-monospace, monospace';
+  overlayCtx.textAlign = 'center';
+  const cw = overlayCtx.measureText(lbl).width + 10;
+  overlayCtx.fillStyle = 'rgba(0,0,0,0.6)';
+  overlayCtx.fillRect(cx - cw / 2, cy + R + 4, cw, 14);
+  overlayCtx.fillStyle = accent;
+  overlayCtx.fillText(lbl, cx, cy + R + 14);
+  overlayCtx.textAlign = 'left';
 }
 function drawMeasureLabel(a, b) {
   const sf = state.origW / state.w;
@@ -1511,16 +1595,19 @@ minimapCanvas.addEventListener('mousedown', (e) => {
 // ============================================================
 // TOOLS
 // ============================================================
-const toolClasses = ['tool-select','tool-pan','tool-inspect','tool-measure','tool-pick'];
+const toolClasses = ['tool-select','tool-pan','tool-inspect','tool-measure','tool-pick','tool-loupe'];
 function setTool(t) {
   state.tool = t;
+  if (t !== 'loupe') state.loupe = null;
   document.querySelectorAll('.tool-rail .tool[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
   viewport.classList.remove(...toolClasses);
   viewport.classList.add('tool-' + t);
   document.getElementById('toolbar-meta').textContent = ({
     select: 'drag a region to analyze', pan: 'drag to pan', inspect: 'move cursor to read pixels',
     measure: 'click two points to measure', pick: 'click to sample a pixel',
+    loupe: 'move cursor to magnify · click copies hex · [ ] power',
   })[t];
+  if (booted && state.src) render();
 }
 document.getElementById('tool-rail').addEventListener('click', (e) => {
   const btn = e.target.closest('button');
@@ -1579,8 +1666,8 @@ viewport.addEventListener('mousedown', (e) => {
     render();
   } else if (state.tool === 'pick') {
     pickPixel(clampSrc(screenToSrc(m.x, m.y)));
-  } else if (state.tool === 'inspect') {
-    // inspect uses hover; click copies hex
+  } else if (state.tool === 'inspect' || state.tool === 'loupe') {
+    // hover-driven tools; click copies the hex under the cursor
     const s = clampSrc(screenToSrc(m.x, m.y));
     const px = readPixel(s.x, s.y);
     if (px) { copyText(rgbToHex(px[0],px[1],px[2])); toast('Copied ' + rgbToHex(px[0],px[1],px[2])); }
@@ -1592,6 +1679,14 @@ window.addEventListener('mousemove', (e) => {
   // hover readout (when cursor within viewport)
   const within = m.x >= 0 && m.y >= 0 && m.x <= vpSize().w && m.y <= vpSize().h;
   if (within && !interaction) updateHud(clampSrc(screenToSrc(m.x, m.y)));
+
+  // loupe: lens follows the cursor
+  if (state.tool === 'loupe' && !interaction) {
+    if (within) state.loupe = { x: m.x, y: m.y };
+    else state.loupe = null;
+    render();
+    return;
+  }
 
   if (!interaction) {
     if (state.tool === 'measure' && state.measure && state.measure.b) {
@@ -1635,6 +1730,10 @@ window.addEventListener('mouseup', (e) => {
       document.getElementById('btn-add').disabled = false; analyzeSelection();
     }
   }
+});
+viewport.addEventListener('mouseleave', () => {
+  document.getElementById('hud').classList.add('dim');
+  if (state.loupe) { state.loupe = null; render(); }
 });
 function clampSrc(p) { return { x: Math.max(0, Math.min(state.w - 1, p.x)), y: Math.max(0, Math.min(state.h - 1, p.y)) }; }
 function normRect(x1, y1, x2, y2) {
@@ -2212,6 +2311,9 @@ window.addEventListener('keydown', (e) => {
     case 'i': setTool('inspect'); break;
     case 'm': setTool('measure'); break;
     case 'p': setTool('pick'); break;
+    case 'g': setTool('loupe'); break;
+    case '[': if (state.tool === 'loupe') { state.loupeZoom = Math.max(2, state.loupeZoom - 1); render(); } break;
+    case ']': if (state.tool === 'loupe') { state.loupeZoom = Math.min(24, state.loupeZoom + 1); render(); } break;
     case '+': case '=': zoomBy(1.4); break;
     case '-': case '_': zoomBy(1/1.4); break;
     case '0': fitView(); render(); break;
