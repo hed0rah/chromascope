@@ -464,26 +464,7 @@ kbd {
 .an-section h3 .mini-btn:hover { color: var(--fg-strong); border-color: var(--fg); }
 .empty-state { color: var(--muted); font-size: 10.5px; line-height: 1.4; }
 .an-section-muted { opacity: .6; }
-
-/* analysis-pane tabs: keep the lab deep-dive (Analyze) visible by default and
-   tuck the 12-color image palette behind its own tab */
-.an-tabs {
-  display: flex;
-  position: sticky; top: 0; z-index: 6;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-}
-.an-tabs button {
-  flex: 1;
-  background: transparent; border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--muted); cursor: pointer;
-  padding: 10px 8px;
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
-}
-.an-tabs button:hover { color: var(--fg); }
-.an-tabs button.active { color: var(--fg-strong); border-bottom-color: var(--accent); }
+.an-section h3 .count.src { text-transform: none; letter-spacing: 0.02em; }
 
 .sel-info {
   display: grid;
@@ -626,29 +607,28 @@ kbd {
 }
 .compare-palette .cp-head .cp-src { color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
 .compare-palette .cp-head .cp-count { margin-left: auto; color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; }
-/* ranked rows: hex sits in its own gutter so it never gets clipped; bar
-   length encodes coverage (relative to the dominant color), row height
-   encodes the primary/secondary/tertiary tier. */
-.compare-palette .cp-rows { display: flex; flex-direction: column; gap: 5px; }
-.compare-palette .cp-row {
-  display: grid; grid-template-columns: 11px 58px 1fr 30px;
-  align-items: center; gap: 9px; cursor: pointer;
+/* proportional ribbon + legend: each ribbon segment's width encodes its
+   coverage share; the hex codes live in the legend below, where they have
+   room and never get clipped no matter how thin a segment is. */
+.compare-palette .cp-ribbon {
+  display: flex; gap: 1px; height: 30px;
+  background: var(--border); border: 1px solid var(--border);
 }
-.compare-palette .cp-row .cp-dot { width: 11px; border: 1px solid rgba(0,0,0,0.35); }
-.compare-palette .cp-row .cp-hex {
-  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9.5px;
-  color: var(--muted-strong); letter-spacing: -0.02em; white-space: nowrap;
+.compare-palette .cp-ribbon .cp-seg { min-width: 3px; height: 100%; cursor: pointer; }
+.compare-palette .cp-ribbon .cp-seg:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+.compare-palette .cp-legend {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(106px, 1fr));
+  gap: 4px 14px;
 }
-.compare-palette .cp-row .cp-track { background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
-.compare-palette .cp-row .cp-fill { height: 100%; min-width: 2px; transition: width .2s ease; }
-.compare-palette .cp-row .cp-pct { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; color: var(--muted); text-align: right; }
-.compare-palette .cp-row.primary   .cp-dot, .compare-palette .cp-row.primary   .cp-track { height: 16px; }
-.compare-palette .cp-row.secondary .cp-dot, .compare-palette .cp-row.secondary .cp-track { height: 12px; }
-.compare-palette .cp-row.tertiary  .cp-dot, .compare-palette .cp-row.tertiary  .cp-track { height: 9px; }
-.compare-palette .cp-row.primary .cp-hex { color: var(--fg-strong); font-size: 10px; }
-.compare-palette .cp-row.tertiary { opacity: 0.9; }
-.compare-palette .cp-row:hover .cp-hex { color: var(--accent); }
-.compare-palette .cp-row:hover .cp-track { border-color: var(--accent); }
+.compare-palette .cp-legend .cp-item {
+  display: grid; grid-template-columns: 11px auto 1fr; align-items: center; gap: 7px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9.5px; cursor: pointer;
+}
+.compare-palette .cp-legend .cp-sw { width: 11px; height: 11px; border: 1px solid rgba(0,0,0,0.35); }
+.compare-palette .cp-legend .cp-hx { color: var(--muted-strong); letter-spacing: -0.02em; white-space: nowrap; }
+.compare-palette .cp-legend .cp-pc { color: var(--muted); text-align: right; }
+.compare-palette .cp-legend .cp-item:first-child .cp-hx { color: var(--fg-strong); }
+.compare-palette .cp-legend .cp-item:hover .cp-hx { color: var(--accent); }
 .compare-palette .cp-empty { color: var(--muted); font-size: 11px; font-style: italic; line-height: 1.5; padding: 14px 0; }
 
 /* modal */
@@ -1046,17 +1026,13 @@ kbd {
 
       <div id="geo-normal-content">
 
-      <div class="an-tabs" id="an-tabs">
-        <button data-an-tab="analyze" class="active">Analyze</button>
-        <button data-an-tab="palette">Palette</button>
-      </div>
-
-      <!-- ANALYZE: laboratory deep-dive, visible by default -->
-      <div class="an-pane" id="an-pane-analyze">
+      <!-- single scrolling column: stats stay pinned at the top, the 12-color
+           image palette lives below the histograms instead of replacing them -->
+      <div class="an-pane" id="an-pane">
 
         <!-- stats (top) -->
         <div class="an-section">
-          <h3>Stats</h3>
+          <h3>Stats <span class="count src" id="stats-src"></span></h3>
           <div id="stats-empty" class="empty-state">—</div>
           <div class="stats-grid" id="stats-grid" style="display:none"></div>
         </div>
@@ -1078,19 +1054,8 @@ kbd {
           <svg class="hue-wheel" id="hue-wheel" viewBox="-110 -110 220 220"></svg>
         </div>
 
-        <!-- selection info (compact) -->
-        <div class="an-section an-section-muted">
-          <h3>Selection</h3>
-          <div id="sel-empty" class="empty-state">drag to select · or select all</div>
-          <div class="sel-info" id="sel-info" style="display:none"></div>
-        </div>
-
-      </div>
-
-      <!-- PALETTE: 12-color image palette + pigment match -->
-      <div class="an-pane" id="an-pane-palette" style="display:none">
-
-        <div class="an-section">
+        <!-- 12-color image palette + pigment match -->
+        <div class="an-section" id="pal-section">
           <h3>Image palette <span class="count" id="pal-count"></span><button class="mini-btn" id="pal-extract">extract</button></h3>
           <div id="pal-empty" class="empty-state">whole-image k-means · rename + classify</div>
           <div class="palette-grid" id="palette-grid" style="display:none"></div>
@@ -1099,6 +1064,13 @@ kbd {
         <div class="an-section" id="match-section" style="display:none">
           <h3>Palette match <span class="count">nearest pigment</span></h3>
           <div class="match-list" id="match-list"></div>
+        </div>
+
+        <!-- selection info (compact) -->
+        <div class="an-section an-section-muted">
+          <h3>Selection</h3>
+          <div id="sel-empty" class="empty-state">drag to select · or select all</div>
+          <div class="sel-info" id="sel-info" style="display:none"></div>
         </div>
 
       </div>
@@ -1118,7 +1090,8 @@ kbd {
     </div>
     <div class="compare-palette" id="sel-palette">
       <div class="cp-head">Selection palette <span class="cp-src" id="sel-pal-src"></span><span class="cp-count" id="sel-pal-count"></span></div>
-      <div class="cp-rows" id="sel-pal-rows" style="display:none"></div>
+      <div class="cp-ribbon" id="sel-pal-ribbon" style="display:none"></div>
+      <div class="cp-legend" id="sel-pal-legend" style="display:none"></div>
       <div class="cp-empty" id="sel-pal-empty">load an image to see its palette</div>
     </div>
   </div>
@@ -1987,14 +1960,8 @@ function resetFilters(skipRender) {
 // ============================================================
 // ANALYSIS
 // ============================================================
-function analyzeSelection() {
-  const sel = state.selection;
-  if (!sel || !state.srcImageData) return;
-  const x = Math.round(sel.x), y = Math.round(sel.y);
-  const w = Math.max(1, Math.round(sel.w)), h = Math.max(1, Math.round(sel.h));
-  const data = state.srcCtx.getImageData(x, y, w, h).data;
+function computeImageStats(data) {
   const N = data.length / 4;
-
   const Rh = new Array(64).fill(0), Gh = new Array(64).fill(0), Bh = new Array(64).fill(0), Hh = new Array(72).fill(0);
   let rSum=0,gSum=0,bSum=0,sSum=0,vSum=0,hSin=0,hCos=0,sCount=0,lumSum=0,lumSum2=0,lMin=255,lMax=0;
   for (let i = 0; i < data.length; i += 4) {
@@ -2011,15 +1978,34 @@ function analyzeSelection() {
   const meanR=rSum/N, meanG=gSum/N, meanB=bSum/N, meanS=sSum/N, meanV=vSum/N;
   const dominantHue = sCount>0 ? ((Math.atan2(hSin,hCos)*180/Math.PI)+360)%360 : 0;
   const meanLum = lumSum/N, stdLum = Math.sqrt(Math.max(0, lumSum2/N - meanLum*meanLum));
+  return { N, Rh, Gh, Bh, Hh, stats: { meanR, meanG, meanB, meanS, meanV, meanLum, stdLum, dominantHue, lMin, lMax } };
+}
+function analyzeSelection() {
+  const sel = state.selection;
+  if (!sel || !state.srcImageData) return;
+  const x = Math.round(sel.x), y = Math.round(sel.y);
+  const w = Math.max(1, Math.round(sel.w)), h = Math.max(1, Math.round(sel.h));
+  const data = state.srcCtx.getImageData(x, y, w, h).data;
+  const { N, Rh, Gh, Bh, Hh, stats } = computeImageStats(data);
   const dom = kmeansColors(data, 8, 8);
 
   renderSelectionInfo(sel, N);
-  renderStats({ meanR, meanG, meanB, meanS, meanV, meanLum, stdLum, dominantHue, lMin, lMax });
+  renderStats(stats, 'selection');
   renderRgbHist(Rh, Gh, Bh);
   renderHueWheel(Hh);
   state._selDom = dom;
   refreshSelPalette();
   renderMatch(data);
+}
+// whole-image stats / histogram / hue for when nothing is selected, so the
+// pane stays informative. mirrors the selection-palette whole-image fallback.
+function analyzeWhole() {
+  if (!state.srcImageData) return false;
+  const { Rh, Gh, Bh, Hh, stats } = computeImageStats(state.srcImageData.data);
+  renderStats(stats, 'whole image');
+  renderRgbHist(Rh, Gh, Bh);
+  renderHueWheel(Hh);
+  return true;
 }
 function kmeansColors(data, k, iterations) {
   const N = data.length / 4;
@@ -2088,9 +2074,10 @@ function renderSelectionInfo(sel, N) {
     <span class="k">norm wh</span><span class="v">${(sel.w/state.w).toFixed(3)} × ${(sel.h/state.h).toFixed(3)}</span>
     <span class="k">samples</span><span class="v">${N.toLocaleString()} px</span>`;
 }
-function renderStats(s) {
+function renderStats(s, srcLabel) {
   document.getElementById('stats-empty').style.display = 'none';
   const grid = document.getElementById('stats-grid'); grid.style.display = '';
+  const srcEl = document.getElementById('stats-src'); if (srcEl) srcEl.textContent = srcLabel || '';
   const meanHex = rgbToHex(s.meanR, s.meanG, s.meanB);
   grid.innerHTML = `
     <div class="stat-cell"><div class="lbl">Mean RGB</div><div class="val"><span class="chip" style="background:${meanHex}"></span>${meanHex}</div></div>
@@ -2146,38 +2133,46 @@ function refreshSelPalette() {
   }
 }
 function renderSelPalette(dom, srcLabel) {
-  const rows = document.getElementById('sel-pal-rows');
+  const ribbon = document.getElementById('sel-pal-ribbon');
+  const legend = document.getElementById('sel-pal-legend');
   const empty = document.getElementById('sel-pal-empty');
   const top = dom.slice(0, 8);
   if (!top.length) { resetSelPalette(); return; }
   empty.style.display = 'none';
-  rows.style.display = '';
-  rows.innerHTML = '';
-  // colors arrive sorted by coverage: top 4 are primary, next 2 secondary,
-  // last 2 tertiary. bar length is coverage relative to the dominant color so
-  // it fills the horizontal space; the hex lives in its own gutter, uncut.
-  const maxPct = top[0].pct || 1;
-  const tierFor = i => i < 4 ? 'primary' : i < 6 ? 'secondary' : 'tertiary';
-  top.forEach((c, i) => {
-    const tier = tierFor(i);
-    const w = Math.max(4, (c.pct / maxPct) * 100);
-    const row = document.createElement('div');
-    row.className = 'cp-row ' + tier;
-    row.title = `${c.hex} · ${(c.pct*100).toFixed(1)}% of ${srcLabel || 'image'} · ${tier} · click to copy`;
-    row.innerHTML =
-      `<div class="cp-dot" style="background:${c.hex}"></div>` +
-      `<div class="cp-hex">${c.hex}</div>` +
-      `<div class="cp-track"><div class="cp-fill" style="width:${w.toFixed(1)}%;background:${c.hex}"></div></div>` +
-      `<div class="cp-pct">${(c.pct*100).toFixed(0)}%</div>`;
-    row.addEventListener('click', () => { copyText(c.hex); flash(row); });
-    rows.appendChild(row);
+  ribbon.style.display = ''; legend.style.display = '';
+  ribbon.innerHTML = ''; legend.innerHTML = '';
+  // colors arrive sorted by coverage. each ribbon segment grows in proportion
+  // to its share (flex-grow = pct); the hex + pct sit in the legend below, so
+  // even a sliver of a color shows its code in full.
+  top.forEach(c => {
+    const pctTxt = (c.pct*100).toFixed(c.pct < 0.1 ? 1 : 0) + '%';
+    const title = `${c.hex} · ${(c.pct*100).toFixed(1)}% of ${srcLabel || 'image'} · click to copy`;
+    const seg = document.createElement('div');
+    seg.className = 'cp-seg';
+    seg.style.flex = c.pct + ' 0 0';
+    seg.style.background = c.hex;
+    seg.title = title;
+    seg.addEventListener('click', () => { copyText(c.hex); flash(seg); });
+    ribbon.appendChild(seg);
+
+    const item = document.createElement('div');
+    item.className = 'cp-item';
+    item.title = title;
+    item.innerHTML =
+      `<span class="cp-sw" style="background:${c.hex}"></span>` +
+      `<span class="cp-hx">${c.hex}</span>` +
+      `<span class="cp-pc">${pctTxt}</span>`;
+    item.addEventListener('click', () => { copyText(c.hex); flash(item); });
+    legend.appendChild(item);
   });
-  document.getElementById('sel-pal-count').textContent = 'k=' + top.length;
+  document.getElementById('sel-pal-count').textContent = 'k' + top.length;
   document.getElementById('sel-pal-src').textContent = srcLabel || '';
 }
 function resetSelPalette() {
-  const rows = document.getElementById('sel-pal-rows');
-  if (rows) { rows.innerHTML = ''; rows.style.display = 'none'; }
+  const ribbon = document.getElementById('sel-pal-ribbon');
+  if (ribbon) { ribbon.innerHTML = ''; ribbon.style.display = 'none'; }
+  const legend = document.getElementById('sel-pal-legend');
+  if (legend) { legend.innerHTML = ''; legend.style.display = 'none'; }
   const empty = document.getElementById('sel-pal-empty');
   if (empty) empty.style.display = '';
   const count = document.getElementById('sel-pal-count');
@@ -2213,18 +2208,13 @@ function renderMatch(data) {
 // ============================================================
 // IMAGE PALETTE (whole image)
 // ============================================================
-// analysis-pane tabs (Analyze deep-dive vs the Palette extractor)
-function setAnTab(tab) {
-  document.querySelectorAll('#an-tabs button').forEach(b => b.classList.toggle('active', b.dataset.anTab === tab));
-  document.getElementById('an-pane-analyze').style.display = tab === 'analyze' ? '' : 'none';
-  document.getElementById('an-pane-palette').style.display = tab === 'palette' ? '' : 'none';
-}
-document.getElementById('an-tabs').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (b) setAnTab(b.dataset.anTab);
-});
-
 document.getElementById('pal-extract').addEventListener('click', extractPalette);
-document.getElementById('palette-btn').addEventListener('click', () => { setAnTab('palette'); extractPalette(); document.querySelector('.analysis-pane').scrollTop = 0; });
+// topbar Palette button: extract the 12-color palette and scroll it into view,
+// without hiding the stats/histogram above it.
+document.getElementById('palette-btn').addEventListener('click', () => {
+  extractPalette();
+  document.getElementById('pal-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 function extractPalette() {
   if (!state.srcImageData) { toast('No pixel data to sample'); return; }
   const dom = kmeansColors(state.srcImageData.data, 12, 10);
@@ -2266,11 +2256,14 @@ function resetPalette() {
 function resetPanel() {
   document.getElementById('sel-empty').style.display = '';
   document.getElementById('sel-info').style.display = 'none';
-  document.getElementById('stats-empty').style.display = '';
-  document.getElementById('stats-grid').style.display = 'none';
-  document.getElementById('rgb-hist').innerHTML = '';
-  document.getElementById('hue-wheel').innerHTML = '';
   state._selDom = null;
+  // with no selection, show whole-image stats/histogram/hue rather than blanks
+  if (!analyzeWhole()) {
+    document.getElementById('stats-empty').style.display = '';
+    document.getElementById('stats-grid').style.display = 'none';
+    document.getElementById('rgb-hist').innerHTML = '';
+    document.getElementById('hue-wheel').innerHTML = '';
+  }
   refreshSelPalette();
   document.getElementById('match-section').style.display = 'none';
 }
