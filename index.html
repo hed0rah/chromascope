@@ -512,17 +512,6 @@ kbd {
 
 .hue-wheel { width: 100%; aspect-ratio: 1; max-width: 200px; margin: 0 auto; display: block; }
 
-.dom-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 1px; background: var(--border); border: 1px solid var(--border);
-}
-.dom-cell { background: var(--surface); cursor: pointer; transition: transform 0.15s; }
-.dom-cell:hover { transform: scale(1.04); position: relative; z-index: 2; }
-.dom-cell .swatch-block { width: 100%; aspect-ratio: 1.3 / 1; }
-.dom-cell .swatch-meta { padding: 5px 7px; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; border-top: 1px solid var(--border); }
-.dom-cell .swatch-meta .hex { color: var(--fg-strong); }
-.dom-cell .swatch-meta .pct { color: var(--muted); float: right; }
-
 /* palette (whole image) */
 .palette-grid {
   display: grid; grid-template-columns: repeat(4, 1fr);
@@ -557,7 +546,7 @@ kbd {
   background: var(--bg);
   border-top: 1px solid var(--border);
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   min-height: 0;
 }
 .compare-header {
@@ -595,6 +584,38 @@ kbd {
 .compare-card .cc-swatches > div { flex: 1; }
 .compare-card .cc-meta { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; color: var(--muted); line-height: 1.5; }
 .compare-card .cc-meta .v { color: var(--fg); }
+
+/* selection palette (docked right of the compare strip, always visible) */
+.compare-palette {
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+  padding: 9px 12px;
+  min-width: 196px;
+  max-width: 236px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  justify-content: flex-start;
+}
+.compare-palette .cp-head {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted);
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+}
+.compare-palette .cp-head .cp-count { color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; }
+.compare-palette .cp-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+.compare-palette .cp-cell { background: var(--surface); cursor: pointer; }
+.compare-palette .cp-cell:hover { outline: 1px solid var(--accent); outline-offset: -1px; position: relative; z-index: 2; }
+.compare-palette .cp-cell .cp-sw { width: 100%; aspect-ratio: 1.5 / 1; }
+.compare-palette .cp-cell .cp-hex {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 8px;
+  color: var(--muted-strong); text-align: center; padding: 2px 1px 3px; letter-spacing: -0.02em;
+}
+.compare-palette .cp-empty { color: var(--muted); font-size: 10.5px; font-style: italic; line-height: 1.4; }
 
 /* modal */
 .modal-backdrop {
@@ -991,14 +1012,6 @@ kbd {
 
       <div id="geo-normal-content">
 
-      <!-- 1 · dominant colors (visual, immediate) -->
-      <div class="an-section">
-        <h3>Dominant colors <span class="count" id="dom-count">k=8</span></h3>
-        <div class="dom-grid" id="dom-grid">
-          <div class="empty-state" style="grid-column:1/-1; padding:6px 0">draw a selection to analyze</div>
-        </div>
-      </div>
-
       <!-- 2 · image palette -->
       <div class="an-section">
         <h3>Image palette <span class="count" id="pal-count"></span><button class="mini-btn" id="pal-extract">extract</button></h3>
@@ -1051,9 +1064,15 @@ kbd {
     <div class="compare-header">
       Regions <span class="count" id="compare-count">0</span>
       <button id="compare-clear">clear all</button>
+      <button id="reset-all" title="Clear selection, regions, palette, filters and measurements">reset to default</button>
     </div>
     <div class="compare-body" id="compare-body">
       <div class="compare-empty">Sample a region, then click "Save region" to stack regions here side by side. Saved regions also feed the Export panel.</div>
+    </div>
+    <div class="compare-palette" id="sel-palette">
+      <div class="cp-head">Selection palette <span class="cp-count" id="sel-pal-count"></span></div>
+      <div class="cp-grid" id="sel-pal-grid" style="display:none"></div>
+      <div class="cp-empty" id="sel-pal-empty">drag a region to extract its palette</div>
     </div>
   </div>
 </div>
@@ -2034,17 +2053,30 @@ function renderHueWheel(Hh) {
   svg.innerHTML = html;
 }
 function renderDominant(dom) {
-  const grid = document.getElementById('dom-grid'); grid.innerHTML = '';
-  dom.slice(0,8).forEach(c => {
+  const grid = document.getElementById('sel-pal-grid');
+  const empty = document.getElementById('sel-pal-empty');
+  const top = dom.slice(0, 8);
+  if (!top.length) { resetSelPalette(); return; }
+  empty.style.display = 'none';
+  grid.style.display = '';
+  grid.innerHTML = '';
+  top.forEach(c => {
     const cell = document.createElement('div');
-    cell.className = 'dom-cell';
-    cell.title = `${c.hex} (${(c.pct*100).toFixed(1)}%) - click to copy`;
-    cell.innerHTML = `<div class="swatch-block" style="background:${c.hex}"></div>
-      <div class="swatch-meta"><span class="hex">${c.hex}</span><span class="pct">${(c.pct*100).toFixed(0)}%</span></div>`;
+    cell.className = 'cp-cell';
+    cell.title = `${c.hex} · ${(c.pct*100).toFixed(1)}% · click to copy`;
+    cell.innerHTML = `<div class="cp-sw" style="background:${c.hex}"></div><div class="cp-hex">${c.hex}</div>`;
     cell.addEventListener('click', () => { copyText(c.hex); flash(cell); });
     grid.appendChild(cell);
   });
-  document.getElementById('dom-count').textContent = `k=${Math.min(8,dom.length)}`;
+  document.getElementById('sel-pal-count').textContent = 'k=' + top.length;
+}
+function resetSelPalette() {
+  const grid = document.getElementById('sel-pal-grid');
+  if (grid) { grid.innerHTML = ''; grid.style.display = 'none'; }
+  const empty = document.getElementById('sel-pal-empty');
+  if (empty) empty.style.display = '';
+  const count = document.getElementById('sel-pal-count');
+  if (count) count.textContent = '';
 }
 function renderMatch(data) {
   const section = document.getElementById('match-section');
@@ -2121,7 +2153,7 @@ function resetPanel() {
   document.getElementById('stats-grid').style.display = 'none';
   document.getElementById('rgb-hist').innerHTML = '';
   document.getElementById('hue-wheel').innerHTML = '';
-  document.getElementById('dom-grid').innerHTML = '<div class="empty-state" style="grid-column:1/-1; padding:8px">No selection yet.</div>';
+  resetSelPalette();
   document.getElementById('match-section').style.display = 'none';
 }
 
@@ -2141,6 +2173,35 @@ document.getElementById('btn-clear').addEventListener('click', () => {
 });
 document.getElementById('btn-add').addEventListener('click', saveRegion);
 document.getElementById('compare-clear').addEventListener('click', () => { state.regions = []; state.regionCounter = 0; renderCompare(); render(); });
+document.getElementById('reset-all').addEventListener('click', resetAll);
+
+// reset the workspace back to the freshly-loaded state (keeps the image)
+function resetAll() {
+  if (!state.src) return;
+  state.selection = null;
+  state.measure = null;
+  state.regions = [];
+  state.regionCounter = 0;
+  state.palette = null;
+  state.hover = null;
+  document.getElementById('btn-add').disabled = true;
+  resetFilters(true);
+  resetPanel();
+  resetPalette();
+  renderCompare();
+  // wipe geometry measurements too
+  if (geoState.drawing) geoCancelDraft();
+  geoState.measurements = [];
+  geoState.selectedId = null;
+  geoState.nextId = 0;
+  geoState.modes = {};
+  document.querySelectorAll('.geo-mode-btn').forEach(b => b.classList.remove('active'));
+  geoSave();
+  if (geoState.active) { geoRenderPanel(); geoRedrawOverlay(); }
+  fitView();
+  render();
+  toast('Reset to default');
+}
 
 // ============================================================
 // SAVED REGIONS / COMPARE
