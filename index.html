@@ -561,7 +561,7 @@ kbd {
 .compare-header .count { color: var(--fg-strong); background: var(--surface); padding: 2px 8px; border: 1px solid var(--border-strong); }
 .compare-header button { margin-left: auto; background: transparent; border: none; color: var(--muted); font: inherit; cursor: pointer; letter-spacing: 0.1em; }
 .compare-header button:hover { color: var(--fg); }
-.compare-body { display: flex; gap: 1px; background: var(--border); overflow-x: auto; min-height: 0; }
+.compare-body { display: flex; gap: 1px; background: var(--border); overflow-x: auto; min-height: 0; min-width: 0; }
 .compare-empty { padding: 12px 16px; font-style: italic; font-size: 12px; color: var(--muted); align-self: center; }
 .compare-card {
   flex: 0 0 230px; background: var(--bg); padding: 9px 11px;
@@ -589,33 +589,45 @@ kbd {
 .compare-palette {
   border-left: 1px solid var(--border);
   background: var(--bg);
-  padding: 9px 12px;
-  min-width: 196px;
-  max-width: 236px;
+  padding: 10px 18px 12px;
+  /* take leftover width, but always reserve the middle for up to 4 region
+     cards (4 x 230px) plus the regions header (~360px) */
+  width: clamp(300px, calc(100vw - 1320px), 620px);
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 11px;
   justify-content: flex-start;
 }
 .compare-palette .cp-head {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
   color: var(--muted);
-  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  display: flex; align-items: baseline; gap: 10px;
 }
-.compare-palette .cp-head .cp-count { color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; }
-.compare-palette .cp-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 1px; background: var(--border); border: 1px solid var(--border);
+.compare-palette .cp-head .cp-src { color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
+.compare-palette .cp-head .cp-count { margin-left: auto; color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; }
+.compare-palette .cp-bars { display: flex; align-items: flex-end; gap: 4px; height: 132px; }
+.compare-palette .cp-bar {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: stretch;
+  cursor: pointer;
 }
-.compare-palette .cp-cell { background: var(--surface); cursor: pointer; }
-.compare-palette .cp-cell:hover { outline: 1px solid var(--accent); outline-offset: -1px; position: relative; z-index: 2; }
-.compare-palette .cp-cell .cp-sw { width: 100%; aspect-ratio: 1.5 / 1; }
-.compare-palette .cp-cell .cp-hex {
+.compare-palette .cp-bar .cp-block {
+  width: 100%;
+  border: 1px solid rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+  transition: height .18s ease, outline-color .12s;
+}
+.compare-palette .cp-bar .cp-hex {
   font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 8px;
-  color: var(--muted-strong); text-align: center; padding: 2px 1px 3px; letter-spacing: -0.02em;
+  color: var(--muted-strong); text-align: center; padding-top: 5px;
+  letter-spacing: -0.04em; white-space: nowrap; overflow: hidden;
 }
-.compare-palette .cp-empty { color: var(--muted); font-size: 10.5px; font-style: italic; line-height: 1.4; }
+.compare-palette .cp-bar .cp-pct { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 7.5px; color: var(--muted); text-align: center; padding-top: 1px; }
+.compare-palette .cp-bar.primary .cp-hex { color: var(--fg-strong); }
+.compare-palette .cp-bar.tertiary { opacity: 0.9; }
+.compare-palette .cp-bar:hover .cp-block { outline: 1px solid var(--accent); outline-offset: 1px; }
+.compare-palette .cp-empty { color: var(--muted); font-size: 11px; font-style: italic; line-height: 1.5; padding: 14px 0; }
 
 /* modal */
 .modal-backdrop {
@@ -1070,9 +1082,9 @@ kbd {
       <div class="compare-empty">Sample a region, then click "Save region" to stack regions here side by side. Saved regions also feed the Export panel.</div>
     </div>
     <div class="compare-palette" id="sel-palette">
-      <div class="cp-head">Selection palette <span class="cp-count" id="sel-pal-count"></span></div>
-      <div class="cp-grid" id="sel-pal-grid" style="display:none"></div>
-      <div class="cp-empty" id="sel-pal-empty">drag a region to extract its palette</div>
+      <div class="cp-head">Selection palette <span class="cp-src" id="sel-pal-src"></span><span class="cp-count" id="sel-pal-count"></span></div>
+      <div class="cp-bars" id="sel-pal-bars" style="display:none"></div>
+      <div class="cp-empty" id="sel-pal-empty">load an image to see its palette</div>
     </div>
   </div>
 </div>
@@ -1184,6 +1196,8 @@ const state = {
   tool: 'select',
   selection: null,                // {x,y,w,h} in internal px
   palette: null,                  // [{name,hex,rgb,pct}]
+  wholeDom: null,                 // whole-image dominant colors (selection-palette fallback)
+  _selDom: null,                  // current selection's dominant colors
   regions: [],                    // saved regions for compare + export
   regionCounter: 0,
   measure: null,                  // {a:{x,y}, b:{x,y}} in internal px
@@ -1301,6 +1315,8 @@ function setupImage(img) {
   state.selection = null;
   state.measure = null;
   state.palette = null;
+  state._selDom = null;
+  state.wholeDom = state.srcImageData ? kmeansColors(state.srcImageData.data, 8, 8) : null;
   state.regions = [];
   state.regionCounter = 0;
   state.hover = null;
@@ -1966,7 +1982,8 @@ function analyzeSelection() {
   renderStats({ meanR, meanG, meanB, meanS, meanV, meanLum, stdLum, dominantHue, lMin, lMax });
   renderRgbHist(Rh, Gh, Bh);
   renderHueWheel(Hh);
-  renderDominant(dom);
+  state._selDom = dom;
+  refreshSelPalette();
   renderMatch(data);
 }
 function kmeansColors(data, k, iterations) {
@@ -2052,31 +2069,62 @@ function renderHueWheel(Hh) {
   });
   svg.innerHTML = html;
 }
-function renderDominant(dom) {
-  const grid = document.getElementById('sel-pal-grid');
+// Selection palette: dominant colors as prominence-tiered bars.
+// Source is the current selection, or the whole image when nothing is selected.
+function refreshSelPalette() {
+  if (state.selection && state._selDom && state._selDom.length) {
+    const sf = state.origW / state.w;
+    const w = Math.round(state.selection.w * sf), h = Math.round(state.selection.h * sf);
+    renderSelPalette(state._selDom, 'selection ' + w + '×' + h);
+  } else if (state.wholeDom && state.wholeDom.length) {
+    renderSelPalette(state.wholeDom, 'whole image');
+  } else {
+    resetSelPalette();
+  }
+}
+function renderSelPalette(dom, srcLabel) {
+  const bars = document.getElementById('sel-pal-bars');
   const empty = document.getElementById('sel-pal-empty');
   const top = dom.slice(0, 8);
   if (!top.length) { resetSelPalette(); return; }
   empty.style.display = 'none';
-  grid.style.display = '';
-  grid.innerHTML = '';
-  top.forEach(c => {
-    const cell = document.createElement('div');
-    cell.className = 'cp-cell';
-    cell.title = `${c.hex} · ${(c.pct*100).toFixed(1)}% · click to copy`;
-    cell.innerHTML = `<div class="cp-sw" style="background:${c.hex}"></div><div class="cp-hex">${c.hex}</div>`;
-    cell.addEventListener('click', () => { copyText(c.hex); flash(cell); });
-    grid.appendChild(cell);
+  bars.style.display = '';
+  bars.innerHTML = '';
+  // rank-based tiers (colors arrive sorted by coverage): top 4 are the primary
+  // colors, then secondary, then tertiary. grow = bar width, h = block height,
+  // so more prominent colors read as wider + taller bars.
+  const TIERS = [
+    { cls: 'primary',   grow: 1.45, h: 1.00 },
+    { cls: 'secondary', grow: 1.00, h: 0.74 },
+    { cls: 'tertiary',  grow: 0.70, h: 0.52 },
+  ];
+  const tierFor = i => i < 4 ? TIERS[0] : i < 6 ? TIERS[1] : TIERS[2];
+  const MAXH = 106;
+  top.forEach((c, i) => {
+    const t = tierFor(i);
+    const bar = document.createElement('div');
+    bar.className = 'cp-bar ' + t.cls;
+    bar.style.flexGrow = t.grow;
+    bar.title = `${c.hex} · ${(c.pct*100).toFixed(1)}% · ${t.cls} · click to copy`;
+    bar.innerHTML =
+      `<div class="cp-block" style="background:${c.hex};height:${Math.round(MAXH*t.h)}px"></div>` +
+      `<div class="cp-hex">${c.hex}</div>` +
+      `<div class="cp-pct">${(c.pct*100).toFixed(0)}%</div>`;
+    bar.addEventListener('click', () => { copyText(c.hex); flash(bar); });
+    bars.appendChild(bar);
   });
   document.getElementById('sel-pal-count').textContent = 'k=' + top.length;
+  document.getElementById('sel-pal-src').textContent = srcLabel || '';
 }
 function resetSelPalette() {
-  const grid = document.getElementById('sel-pal-grid');
-  if (grid) { grid.innerHTML = ''; grid.style.display = 'none'; }
+  const bars = document.getElementById('sel-pal-bars');
+  if (bars) { bars.innerHTML = ''; bars.style.display = 'none'; }
   const empty = document.getElementById('sel-pal-empty');
   if (empty) empty.style.display = '';
   const count = document.getElementById('sel-pal-count');
   if (count) count.textContent = '';
+  const src = document.getElementById('sel-pal-src');
+  if (src) src.textContent = '';
 }
 function renderMatch(data) {
   const section = document.getElementById('match-section');
@@ -2153,7 +2201,8 @@ function resetPanel() {
   document.getElementById('stats-grid').style.display = 'none';
   document.getElementById('rgb-hist').innerHTML = '';
   document.getElementById('hue-wheel').innerHTML = '';
-  resetSelPalette();
+  state._selDom = null;
+  refreshSelPalette();
   document.getElementById('match-section').style.display = 'none';
 }
 
