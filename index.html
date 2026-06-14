@@ -607,6 +607,7 @@ kbd {
   display: flex; align-items: baseline; gap: 10px;
 }
 .compare-palette .cp-head .cp-src { color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
+.compare-palette .cp-head .cp-harm { color: var(--accent); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
 .compare-palette .cp-head .cp-count { margin-left: auto; color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; }
 /* proportional ribbon + legend: each ribbon segment's width encodes its
    coverage share; the hex codes live in the legend below, where they have
@@ -1103,7 +1104,7 @@ kbd {
       <div class="compare-empty">Sample a region, then click "Save region" to stack regions here side by side. Saved regions also feed the Export panel.</div>
     </div>
     <div class="compare-palette" id="sel-palette">
-      <div class="cp-head">Selection palette <span class="cp-src" id="sel-pal-src"></span><span class="cp-count" id="sel-pal-count"></span></div>
+      <div class="cp-head">Selection palette <span class="cp-src" id="sel-pal-src"></span><span class="cp-harm" id="sel-pal-harm"></span><span class="cp-count" id="sel-pal-count"></span></div>
       <div class="cp-modes" id="sel-pal-modes">
         <button class="cp-mode-btn active" data-pal-mode="dominant" title="rank by area · the colors that fill the most of the selection">dominant</button>
         <button class="cp-mode-btn" data-pal-mode="accent" title="surface vivid, distinct minority colors · a small red hat can outrank big neutral fields">accent</button>
@@ -2225,6 +2226,50 @@ function rankPalette(clusters, mode) {
 function applyPalMode(clusters) { return rankPalette(clusters, state.palMode || 'dominant'); }
 
 // ============================================================
+// HARMONY: read the relationship between a selection's colors, not just their
+// list. classify the hue geometry (analogous / complementary / triadic / ...)
+// and the warm/cool balance, the way a painter reads a passage.
+// ============================================================
+function hueDeg(c) { return (Math.atan2(c.lab[2], c.lab[1]) * 180/Math.PI + 360) % 360; }
+function angDist(a, b) { let d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+function classifyHarmony(clusters) {
+  if (!clusters || !clusters.length) return null;
+  const CH = 0.045;                                   // OKLab chroma below this reads as neutral
+  const chro = clusters.filter(c => c.chroma >= CH);
+  const chromaWeight = chro.reduce((s, c) => s + c.pct, 0);
+  let warm = 0, cool = 0;
+  chro.forEach(c => { const h = hueDeg(c); (h <= 115 || h >= 335) ? warm += c.pct : cool += c.pct; });
+  const warmPct = (warm + cool) ? warm / (warm + cool) : 0;
+  const temp = chromaWeight < 0.06 ? 'neutral' : warmPct > 0.65 ? 'warm' : warmPct < 0.35 ? 'cool' : 'balanced';
+  if (chromaWeight < 0.06 || !chro.length) return { scheme: 'neutral', temp, warmPct };
+
+  // collapse hues into groups (within 25 deg), weighted circular-mean centres
+  const groups = [];
+  chro.slice().sort((a, b) => b.pct - a.pct).forEach(c => {
+    const h = hueDeg(c), rad = h * Math.PI/180;
+    const g = groups.find(g => angDist(g.h, h) <= 25);
+    if (g) { g.sx += c.pct*Math.cos(rad); g.sy += c.pct*Math.sin(rad); g.w += c.pct; g.h = (Math.atan2(g.sy, g.sx)*180/Math.PI + 360) % 360; }
+    else groups.push({ h, sx: c.pct*Math.cos(rad), sy: c.pct*Math.sin(rad), w: c.pct });
+  });
+  const sig = groups.filter(g => g.w >= 0.04).sort((a, b) => b.w - a.w);
+  const H = sig.map(g => g.h), n = sig.length;
+  let maxGap = 0;
+  for (let i = 0; i < n; i++) for (let j = i+1; j < n; j++) maxGap = Math.max(maxGap, angDist(H[i], H[j]));
+  let scheme;
+  if (n <= 1) {
+    let sp = 0; const hs = chro.map(hueDeg);
+    for (let i = 0; i < hs.length; i++) for (let j = i+1; j < hs.length; j++) sp = Math.max(sp, angDist(hs[i], hs[j]));
+    scheme = sp < 18 ? 'monochrome' : 'analogous';
+  } else if (maxGap < 80) scheme = 'analogous';        // hues clustered in one arc, regardless of group count
+  else if (n === 2) scheme = maxGap >= 140 ? 'complementary' : 'contrast';
+  else if (n === 3) {
+    const gp = [angDist(H[0],H[1]), angDist(H[1],H[2]), angDist(H[0],H[2])];
+    scheme = gp.filter(g => g >= 95 && g <= 145).length >= 2 ? 'triadic' : 'split-complementary';
+  } else scheme = 'polychrome';
+  return { scheme, temp, warmPct };
+}
+
+// ============================================================
 // RENDERERS (analysis sidebar)
 // ============================================================
 function renderSelectionInfo(sel, N) {
@@ -2331,6 +2376,10 @@ function renderSelPalette(dom, srcLabel) {
   });
   document.getElementById('sel-pal-count').textContent = 'k' + top.length;
   document.getElementById('sel-pal-src').textContent = srcLabel || '';
+  // harmony reads the whole color set, so classify from the full ranked list
+  const harm = classifyHarmony(dom);
+  const harmEl = document.getElementById('sel-pal-harm');
+  if (harmEl) harmEl.textContent = harm ? harm.scheme + ' · ' + harm.temp : '';
 }
 function resetSelPalette() {
   const ribbon = document.getElementById('sel-pal-ribbon');
@@ -2343,6 +2392,8 @@ function resetSelPalette() {
   if (count) count.textContent = '';
   const src = document.getElementById('sel-pal-src');
   if (src) src.textContent = '';
+  const harm = document.getElementById('sel-pal-harm');
+  if (harm) harm.textContent = '';
 }
 // palette mode buttons: re-rank the cached clusters in place (no re-clustering),
 // so dominant/accent/spread switch instantly. ribbon widths stay tied to real
