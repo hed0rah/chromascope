@@ -291,6 +291,7 @@ kbd {
 .viewport.tool-measure { cursor: crosshair; }
 .viewport.tool-pick { cursor: crosshair; }
 .viewport.tool-loupe { cursor: none; }
+.viewport.tool-ellipse { cursor: crosshair; }
 .viewport.geo-tool-pan    { cursor: grab; }
 .viewport.geo-tool-select { cursor: default; }
 .viewport.geo-tool-move   { cursor: move; }
@@ -606,6 +607,7 @@ kbd {
   display: flex; align-items: baseline; gap: 10px;
 }
 .compare-palette .cp-head .cp-src { color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
+.compare-palette .cp-head .cp-harm { color: var(--accent); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
 .compare-palette .cp-head .cp-count { margin-left: auto; color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; }
 /* proportional ribbon + legend: each ribbon segment's width encodes its
    coverage share; the hex codes live in the legend below, where they have
@@ -737,6 +739,16 @@ kbd {
 .geo-mode-btn:hover { color: var(--fg-strong); border-color: var(--fg); }
 .geo-mode-btn.active { background: var(--surface-alt); color: var(--fg-strong); border-color: var(--border-strong); }
 .geo-mode-btn.active::before { content: '● '; }
+/* palette mode buttons (own class so geo reset never clears their active state) */
+.cp-modes { display: flex; gap: 4px; margin: 4px 0 6px; flex-wrap: wrap; }
+.cp-mode-btn {
+  font-family: inherit; font-size: 9px; letter-spacing: .04em;
+  padding: 2px 7px; border: 1px solid var(--border-strong); border-radius: 3px;
+  background: transparent; color: var(--muted); cursor: pointer; transition: all .12s;
+}
+.cp-mode-btn:hover { color: var(--fg-strong); border-color: var(--fg); }
+.cp-mode-btn.active { background: var(--surface-alt); color: var(--fg-strong); border-color: var(--border-strong); }
+.cp-mode-btn.active::before { content: '● '; }
 
 .geo-meas-scroll {
   flex: 1;
@@ -898,6 +910,9 @@ kbd {
     <div class="tool-rail" id="tool-rail">
       <button class="tool active" data-tool="select" title="Select region (V)" aria-label="Select">
         <svg viewBox="0 0 24 24"><path d="M4 4h6M4 4v6M20 4h-6M20 4v6M4 20h6M4 20v-6M20 20h-6M20 20v-6"/></svg>
+      </button>
+      <button class="tool" data-tool="ellipse" title="Elliptical select (C) - drops the corners a box would grab" aria-label="Ellipse select">
+        <svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="8" stroke-dasharray="3 2.5"/></svg>
       </button>
       <button class="tool" data-tool="pan" title="Pan (H or hold Space)" aria-label="Pan">
         <svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 013 0V11m0-1.5a1.5 1.5 0 013 0V12m0-1a1.5 1.5 0 013 0v4a5 5 0 01-5 5h-2.5a5 5 0 01-3.6-1.5L6 17.5s-1.5-1.6-2-2.2c-.5-.7 0-1.8 1-1.8.7 0 1.2.4 1.5.8L8 16V8a1.5 1.5 0 013 0"/></svg>
@@ -1089,7 +1104,13 @@ kbd {
       <div class="compare-empty">Sample a region, then click "Save region" to stack regions here side by side. Saved regions also feed the Export panel.</div>
     </div>
     <div class="compare-palette" id="sel-palette">
-      <div class="cp-head">Selection palette <span class="cp-src" id="sel-pal-src"></span><span class="cp-count" id="sel-pal-count"></span></div>
+      <div class="cp-head">Selection palette <span class="cp-src" id="sel-pal-src"></span><span class="cp-harm" id="sel-pal-harm"></span><span class="cp-count" id="sel-pal-count"></span></div>
+      <div class="cp-modes" id="sel-pal-modes">
+        <button class="cp-mode-btn active" data-pal-mode="dominant" title="rank by area · the colors that fill the most of the selection">dominant</button>
+        <button class="cp-mode-btn" data-pal-mode="accent" title="surface vivid, distinct minority colors · a small red hat can outrank big neutral fields">accent</button>
+        <button class="cp-mode-btn" data-pal-mode="spread" title="merge near-identical colors so the palette shows real variety, not eight shades of white">spread</button>
+        <button class="cp-mode-btn" data-pal-mode="subject" title="weight by where colors sit · a tight, central color (the thing you framed) outranks diffuse background">subject</button>
+      </div>
       <div class="cp-ribbon" id="sel-pal-ribbon" style="display:none"></div>
       <div class="cp-legend" id="sel-pal-legend" style="display:none"></div>
       <div class="cp-empty" id="sel-pal-empty">load an image to see its palette</div>
@@ -1171,6 +1192,23 @@ function rgbToHex(r, g, b) {
   return '#' + [r,g,b].map(v => Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0').toUpperCase()).join('');
 }
 function luminance(r, g, b) { return 0.299*r + 0.587*g + 0.114*b; }
+// OKLab: perceptually-uniform space. euclidean distance here tracks how
+// different two colors actually look, so clustering merges near-alikes the way
+// the eye does (off-whites collapse) instead of by raw RGB gaps.
+function srgbToLinear(c) { c /= 255; return c <= 0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+function rgbToOklab(r, g, b) {
+  const lr = srgbToLinear(r), lg = srgbToLinear(g), lb = srgbToLinear(b);
+  const l = 0.4122214708*lr + 0.5363325363*lg + 0.0514459929*lb;
+  const m = 0.2119034982*lr + 0.6806995451*lg + 0.1073969566*lb;
+  const s = 0.0883024619*lr + 0.2817188376*lg + 0.6299787005*lb;
+  const l_ = Math.cbrt(l), m_ = Math.cbrt(m), s_ = Math.cbrt(s);
+  return [
+    0.2104542553*l_ + 0.7936177850*m_ - 0.0040720468*s_,
+    1.9779984951*l_ - 2.4285922050*m_ + 0.4505937099*s_,
+    0.0259040371*l_ + 0.7827717662*m_ - 0.8086757660*s_,
+  ];
+}
+function labDist(p, c) { return Math.sqrt((p[0]-c[0])**2 + (p[1]-c[1])**2 + (p[2]-c[2])**2); }
 function hueName(h) {
   if (h < 15 || h >= 345) return 'red';
   if (h < 45)  return 'red-orange';
@@ -1205,7 +1243,10 @@ const state = {
   selection: null,                // {x,y,w,h} in internal px
   palette: null,                  // [{name,hex,rgb,pct}]
   wholeDom: null,                 // whole-image dominant colors (selection-palette fallback)
-  _selDom: null,                  // current selection's dominant colors
+  _selDom: null,                  // current selection's ranked palette (display)
+  _selClusters: null,             // raw kmeans clusters for selection (re-ranked per mode)
+  wholeClusters: null,            // raw kmeans clusters for whole image (fallback)
+  palMode: 'dominant',            // dominant | accent | spread
   regions: [],                    // saved regions for compare + export
   regionCounter: 0,
   measure: null,                  // {a:{x,y}, b:{x,y}} in internal px
@@ -1324,7 +1365,8 @@ function setupImage(img) {
   state.measure = null;
   state.palette = null;
   state._selDom = null;
-  state.wholeDom = state.srcImageData ? kmeansColors(state.srcImageData.data, 8, 8) : null;
+  state.wholeClusters = state.srcImageData ? kmeansColors(state.srcImageData.data, 12, 8, { w: state.w, h: state.h }) : null;
+  state.wholeDom = state.wholeClusters ? applyPalMode(state.wholeClusters) : null;
   state.regions = [];
   state.regionCounter = 0;
   state.hover = null;
@@ -1445,7 +1487,13 @@ function renderOverlay() {
     const a = srcToScreen(reg.x, reg.y);
     const w = reg.w * state.view.scale, h = reg.h * state.view.scale;
     overlayCtx.strokeStyle = 'rgba(255,255,255,0.45)';
-    overlayCtx.strokeRect(a.x + 0.5, a.y + 0.5, w, h);
+    if (reg.shape === 'ellipse') {
+      overlayCtx.beginPath();
+      overlayCtx.ellipse(a.x + w/2, a.y + h/2, Math.abs(w/2), Math.abs(h/2), 0, 0, Math.PI*2);
+      overlayCtx.stroke();
+    } else {
+      overlayCtx.strokeRect(a.x + 0.5, a.y + 0.5, w, h);
+    }
     overlayCtx.fillStyle = 'rgba(0,0,0,0.55)';
     const lw = overlayCtx.measureText(reg.label).width + 8;
     overlayCtx.fillRect(a.x, a.y - 14, lw, 14);
@@ -1457,15 +1505,19 @@ function renderOverlay() {
   if (state.selection) {
     const a = srcToScreen(state.selection.x, state.selection.y);
     const w = state.selection.w * state.view.scale, h = state.selection.h * state.view.scale;
+    const ellipse = state.selection.shape === 'ellipse';
+    const ecx = a.x + w/2, ecy = a.y + h/2, erx = Math.abs(w/2), ery = Math.abs(h/2);
     overlayCtx.save();
     overlayCtx.fillStyle = 'rgba(0,0,0,0.42)';
     overlayCtx.beginPath();
     overlayCtx.rect(0, 0, vw, vh);
-    overlayCtx.rect(a.x, a.y, w, h);
+    if (ellipse) overlayCtx.ellipse(ecx, ecy, erx, ery, 0, 0, Math.PI*2);
+    else overlayCtx.rect(a.x, a.y, w, h);
     overlayCtx.fill('evenodd');
     overlayCtx.strokeStyle = accent;
     overlayCtx.lineWidth = 1.5;
-    overlayCtx.strokeRect(a.x + 0.5, a.y + 0.5, w, h);
+    if (ellipse) { overlayCtx.beginPath(); overlayCtx.ellipse(ecx, ecy, erx, ery, 0, 0, Math.PI*2); overlayCtx.stroke(); }
+    else overlayCtx.strokeRect(a.x + 0.5, a.y + 0.5, w, h);
     overlayCtx.restore();
   }
 
@@ -1638,7 +1690,7 @@ minimapCanvas.addEventListener('mousedown', (e) => {
 // ============================================================
 // TOOLS
 // ============================================================
-const toolClasses = ['tool-select','tool-pan','tool-inspect','tool-measure','tool-pick','tool-loupe'];
+const toolClasses = ['tool-select','tool-ellipse','tool-pan','tool-inspect','tool-measure','tool-pick','tool-loupe'];
 function setTool(t) {
   state.tool = t;
   if (t !== 'loupe') state.loupe = null;
@@ -1646,7 +1698,8 @@ function setTool(t) {
   viewport.classList.remove(...toolClasses);
   viewport.classList.add('tool-' + t);
   document.getElementById('toolbar-meta').textContent = ({
-    select: 'drag a region to analyze', pan: 'drag to pan', inspect: 'move cursor to read pixels',
+    select: 'drag a region to analyze', ellipse: 'drag an ellipse · drops the corners a box would grab',
+    pan: 'drag to pan', inspect: 'move cursor to read pixels',
     measure: 'click two points to measure', pick: 'click to sample a pixel',
     loupe: 'move cursor to magnify · click copies hex · [ ] power',
   })[t];
@@ -1692,7 +1745,7 @@ viewport.addEventListener('mousedown', (e) => {
     e.preventDefault();
     return;
   }
-  if (state.tool === 'select') {
+  if (state.tool === 'select' || state.tool === 'ellipse') {
     const s = screenToSrc(m.x, m.y);
     interaction = { type: 'select', start: clampSrc(s), moved: false };
   } else if (state.tool === 'measure') {
@@ -1752,6 +1805,7 @@ window.addEventListener('mousemove', (e) => {
     const cur = clampSrc(screenToSrc(m.x, m.y));
     const s = interaction.start;
     state.selection = normRect(s.x, s.y, cur.x, cur.y);
+    state.selection.shape = (state.tool === 'ellipse') ? 'ellipse' : 'rect';
     render();
   } else if (interaction.type === 'measure') {
     state.measure.b = clampSrc(screenToSrc(m.x, m.y));
@@ -1961,11 +2015,12 @@ function resetFilters(skipRender) {
 // ANALYSIS
 // ============================================================
 function computeImageStats(data) {
-  const N = data.length / 4;
   const Rh = new Array(64).fill(0), Gh = new Array(64).fill(0), Bh = new Array(64).fill(0), Hh = new Array(72).fill(0);
-  let rSum=0,gSum=0,bSum=0,sSum=0,vSum=0,hSin=0,hCos=0,sCount=0,lumSum=0,lumSum2=0,lMin=255,lMax=0;
+  let rSum=0,gSum=0,bSum=0,sSum=0,vSum=0,hSin=0,hCos=0,sCount=0,lumSum=0,lumSum2=0,lMin=255,lMax=0,cnt=0;
   for (let i = 0; i < data.length; i += 4) {
+    if (data[i+3] === 0) continue;                // skip masked (out-of-shape) pixels
     const r = data[i], g = data[i+1], b = data[i+2];
+    cnt++;
     rSum+=r; gSum+=g; bSum+=b;
     Rh[Math.min(63, r>>2)]++; Gh[Math.min(63, g>>2)]++; Bh[Math.min(63, b>>2)]++;
     const [hu,sa,va] = rgbToHsv(r,g,b);
@@ -1975,25 +2030,45 @@ function computeImageStats(data) {
     lumSum+=lum; lumSum2+=lum*lum;
     if (lum < lMin) lMin = lum; if (lum > lMax) lMax = lum;
   }
+  const N = cnt || 1;
   const meanR=rSum/N, meanG=gSum/N, meanB=bSum/N, meanS=sSum/N, meanV=vSum/N;
   const dominantHue = sCount>0 ? ((Math.atan2(hSin,hCos)*180/Math.PI)+360)%360 : 0;
   const meanLum = lumSum/N, stdLum = Math.sqrt(Math.max(0, lumSum2/N - meanLum*meanLum));
-  return { N, Rh, Gh, Bh, Hh, stats: { meanR, meanG, meanB, meanS, meanV, meanLum, stdLum, dominantHue, lMin, lMax } };
+  return { N: cnt, Rh, Gh, Bh, Hh, stats: { meanR, meanG, meanB, meanS, meanV, meanLum, stdLum, dominantHue, lMin, lMax } };
+}
+// pull the current selection's pixels. for an ellipse, zero the alpha of
+// out-of-shape pixels so every consumer (stats, k-means, match) ignores the
+// corners the box would otherwise include.
+function maskEllipse(data, w, h) {
+  const rx = w/2, ry = h/2;
+  for (let y = 0; y < h; y++) {
+    const ny = (y + 0.5 - ry) / ry;
+    for (let x = 0; x < w; x++) {
+      const nx = (x + 0.5 - rx) / rx;
+      if (nx*nx + ny*ny > 1) data[(y*w + x)*4 + 3] = 0;
+    }
+  }
+}
+function selectionPixels() {
+  const sel = state.selection;
+  const x = Math.round(sel.x), y = Math.round(sel.y);
+  const w = Math.max(1, Math.round(sel.w)), h = Math.max(1, Math.round(sel.h));
+  const data = state.srcCtx.getImageData(x, y, w, h).data;
+  if (sel.shape === 'ellipse') maskEllipse(data, w, h);
+  return { data, w, h };
 }
 function analyzeSelection() {
   const sel = state.selection;
   if (!sel || !state.srcImageData) return;
-  const x = Math.round(sel.x), y = Math.round(sel.y);
-  const w = Math.max(1, Math.round(sel.w)), h = Math.max(1, Math.round(sel.h));
-  const data = state.srcCtx.getImageData(x, y, w, h).data;
+  const { data, w, h } = selectionPixels();
   const { N, Rh, Gh, Bh, Hh, stats } = computeImageStats(data);
-  const dom = kmeansColors(data, 8, 8);
+  state._selClusters = kmeansColors(data, 12, 10, { w, h });
 
   renderSelectionInfo(sel, N);
   renderStats(stats, 'selection');
   renderRgbHist(Rh, Gh, Bh);
   renderHueWheel(Hh);
-  state._selDom = dom;
+  state._selDom = applyPalMode(state._selClusters);
   refreshSelPalette();
   renderMatch(data);
 }
@@ -2007,14 +2082,20 @@ function analyzeWhole() {
   renderHueWheel(Hh);
   return true;
 }
-function kmeansColors(data, k, iterations) {
+function kmeansColors(data, k, iterations, opts) {
   const N = data.length / 4;
   const step = Math.max(1, Math.floor(N / 8000));
-  const samples = [];
-  for (let i = 0; i < data.length; i += 4*step) samples.push([data[i], data[i+1], data[i+2]]);
+  const W = opts && opts.w, H = opts && opts.h;   // selection dims enable spatial stats (subject mode)
+  const samples = [], idx = [];
+  for (let i = 0; i < data.length; i += 4*step) {
+    if (data[i+3] === 0) continue;                // skip masked (out-of-shape) pixels
+    samples.push([data[i], data[i+1], data[i+2]]);
+    if (W) idx.push(i >> 2);                       // pixel index, to recover x,y later
+  }
   const M = samples.length;
   if (M === 0) return [];
   k = Math.min(k, M);
+  const labs = samples.map(p => rgbToOklab(p[0], p[1], p[2]));
   const dist2 = (p, c) => (p[0]-c[0])**2 + (p[1]-c[1])**2 + (p[2]-c[2])**2;
 
   // Deterministic PRNG seeded from the sample set, so an identical region
@@ -2030,34 +2111,162 @@ function kmeansColors(data, k, iterations) {
   // so distinct-but-minority colors (e.g. a small vivid red) reliably get a
   // seed instead of being absorbed into a neighbour. Evenly-spaced seeding
   // missed them depending on pixel order.
-  const centroids = [samples[Math.floor(rand()*M) % M].slice()];
+  const centroids = [labs[Math.floor(rand()*M) % M].slice()];
   const dmin = new Float64Array(M).fill(Infinity);
   while (centroids.length < k) {
     const last = centroids[centroids.length-1];
     let total = 0;
-    for (let i = 0; i < M; i++) { const d = dist2(samples[i], last); if (d < dmin[i]) dmin[i] = d; total += dmin[i]; }
-    if (total <= 0) { centroids.push(samples[Math.floor(rand()*M) % M].slice()); continue; }
-    let target = rand() * total, idx = M-1;
-    for (let i = 0; i < M; i++) { target -= dmin[i]; if (target <= 0) { idx = i; break; } }
-    centroids.push(samples[idx].slice());
+    for (let i = 0; i < M; i++) { const d = dist2(labs[i], last); if (d < dmin[i]) dmin[i] = d; total += dmin[i]; }
+    if (total <= 0) { centroids.push(labs[Math.floor(rand()*M) % M].slice()); continue; }
+    let target = rand() * total, pick = M-1;
+    for (let i = 0; i < M; i++) { target -= dmin[i]; if (target <= 0) { pick = i; break; } }
+    centroids.push(labs[pick].slice());
   }
 
   const K = centroids.length;
   const assign = new Array(M).fill(0);
   for (let it = 0; it < iterations; it++) {
     for (let i = 0; i < M; i++) {
-      let bi=0, bd=Infinity; const p = samples[i];
+      let bi=0, bd=Infinity; const p = labs[i];
       for (let c = 0; c < K; c++) { const d = dist2(p, centroids[c]); if (d<bd){bd=d;bi=c;} }
       assign[i] = bi;
     }
     const sums = Array.from({length:K}, () => [0,0,0,0]);
-    for (let i = 0; i < M; i++) { const a=assign[i], p=samples[i]; sums[a][0]+=p[0]; sums[a][1]+=p[1]; sums[a][2]+=p[2]; sums[a][3]++; }
+    for (let i = 0; i < M; i++) { const a=assign[i], p=labs[i]; sums[a][0]+=p[0]; sums[a][1]+=p[1]; sums[a][2]+=p[2]; sums[a][3]++; }
     for (let c = 0; c < K; c++) if (sums[c][3]>0) centroids[c] = [sums[c][0]/sums[c][3], sums[c][1]/sums[c][3], sums[c][2]/sums[c][3]];
   }
+  // accumulate per-cluster size + mean RGB. swatch color is the true average of
+  // member pixels; lab centroid + chroma drive the ranking modes below.
   const sizes = new Array(K).fill(0);
-  for (let i = 0; i < M; i++) sizes[assign[i]]++;
-  return centroids.map((c,i) => ({ rgb:[Math.round(c[0]),Math.round(c[1]),Math.round(c[2])], hex:rgbToHex(c[0],c[1],c[2]), pct:sizes[i]/M }))
-    .filter(c => c.pct > 0).sort((a,b)=>b.pct-a.pct);
+  const rgbSum = Array.from({length:K}, () => [0,0,0]);
+  for (let i = 0; i < M; i++) { const a=assign[i], p=samples[i]; sizes[a]++; rgbSum[a][0]+=p[0]; rgbSum[a][1]+=p[1]; rgbSum[a][2]+=p[2]; }
+
+  // spatial stats per cluster (subject mode): where each color sits and how
+  // tightly it clumps. a concentrated, central color reads as the subject you
+  // framed; a color smeared to the edges reads as background.
+  let geom = null;
+  if (W) {
+    const cx0 = W/2, cy0 = H/2, sigma = (Math.hypot(W, H) / 4) || 1;
+    geom = Array.from({length:K}, () => ({ n:0, sx:0, sy:0, sxx:0, syy:0, gw:0 }));
+    for (let i = 0; i < M; i++) {
+      const p = idx[i], px = p % W, py = (p / W) | 0, g = geom[assign[i]];
+      g.n++; g.sx+=px; g.sy+=py; g.sxx+=px*px; g.syy+=py*py;
+      const dx = px - cx0, dy = py - cy0;
+      g.gw += Math.exp(-(dx*dx + dy*dy) / (2*sigma*sigma));
+    }
+  }
+  const halfDiag = W ? Math.hypot(W, H) / 2 : 0;
+  return centroids.map((c,i) => {
+    const n = sizes[i] || 1;
+    const rgb = [Math.round(rgbSum[i][0]/n), Math.round(rgbSum[i][1]/n), Math.round(rgbSum[i][2]/n)];
+    const out = { rgb, hex: rgbToHex(rgb[0], rgb[1], rgb[2]), pct: sizes[i]/M, lab: c.slice(), chroma: Math.hypot(c[1], c[2]) };
+    if (geom) {
+      const g = geom[i], gn = g.n || 1;
+      const mx = g.sx/gn, my = g.sy/gn;
+      const std = Math.sqrt(Math.max(0, g.sxx/gn - mx*mx) + Math.max(0, g.syy/gn - my*my));
+      out.compactness = halfDiag ? Math.max(0, 1 - std / halfDiag) : 0;  // 1 = tight blob, 0 = spread
+      out.centerBias = g.gw / gn;                                        // 1 = centred, 0 = peripheral
+    }
+    return out;
+  }).filter(c => c.pct > 0).sort((a,b) => b.pct - a.pct);
+}
+
+// ============================================================
+// PALETTE MODES
+// Re-rank/merge cached clusters without re-clustering, so switching modes is
+// instant. dominant: by area. accent: surface vivid distinct minorities (a 2%
+// red hat outranks big neutral fields). spread: collapse near-alikes so the
+// palette shows real variety, not eight shades of white.
+// ============================================================
+function paletteMean(clusters) {
+  let L=0, a=0, b=0, w=0;
+  clusters.forEach(c => { L+=c.lab[0]*c.pct; a+=c.lab[1]*c.pct; b+=c.lab[2]*c.pct; w+=c.pct; });
+  return w ? [L/w, a/w, b/w] : [0,0,0];
+}
+function mergePalette(clusters, T) {
+  const used = new Array(clusters.length).fill(false);
+  const out = [];
+  for (let i = 0; i < clusters.length; i++) {
+    if (used[i]) continue;
+    const members = [clusters[i]]; used[i] = true;
+    for (let j = i+1; j < clusters.length; j++) {
+      if (!used[j] && labDist(clusters[i].lab, clusters[j].lab) < T) { members.push(clusters[j]); used[j] = true; }
+    }
+    // representative = most chromatic member (keeps the palette vivid);
+    // coverage = summed share of the whole merged group (honest area).
+    const rep = members.reduce((a, b) => b.chroma > a.chroma ? b : a);
+    out.push(Object.assign({}, rep, { pct: members.reduce((s, m) => s + m.pct, 0) }));
+  }
+  return out.sort((a, b) => b.pct - a.pct);
+}
+function rankPalette(clusters, mode) {
+  if (!clusters || !clusters.length) return clusters || [];
+  if (mode === 'accent') {
+    const mean = paletteMean(clusters);
+    return clusters.map(c => {
+      const distMean = labDist(c.lab, mean);
+      // sqrt(pct) tempers area dominance; chroma + distance-from-mean lift a
+      // small vivid off-mean color above large neutral fields.
+      const score = Math.sqrt(c.pct) * (0.15 + c.chroma) * (0.05 + distMean);
+      return Object.assign({}, c, { score });
+    }).sort((a, b) => b.score - a.score);
+  }
+  if (mode === 'spread') return mergePalette(clusters, 0.10);
+  if (mode === 'subject') {
+    if (clusters[0].compactness === undefined) return rankPalette(clusters, 'accent'); // no geometry -> fall back
+    return clusters.map(c => {
+      // concentrated (compact) + central colors win; area is tempered and
+      // chroma is a mild tiebreaker. surfaces the thing you framed.
+      const score = Math.sqrt(c.pct) * (0.15 + c.chroma * 0.5) * (0.2 + c.compactness) * (0.2 + c.centerBias);
+      return Object.assign({}, c, { score });
+    }).sort((a, b) => b.score - a.score);
+  }
+  return clusters.slice().sort((a, b) => b.pct - a.pct); // dominant
+}
+function applyPalMode(clusters) { return rankPalette(clusters, state.palMode || 'dominant'); }
+
+// ============================================================
+// HARMONY: read the relationship between a selection's colors, not just their
+// list. classify the hue geometry (analogous / complementary / triadic / ...)
+// and the warm/cool balance, the way a painter reads a passage.
+// ============================================================
+function hueDeg(c) { return (Math.atan2(c.lab[2], c.lab[1]) * 180/Math.PI + 360) % 360; }
+function angDist(a, b) { let d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+function classifyHarmony(clusters) {
+  if (!clusters || !clusters.length) return null;
+  const CH = 0.045;                                   // OKLab chroma below this reads as neutral
+  const chro = clusters.filter(c => c.chroma >= CH);
+  const chromaWeight = chro.reduce((s, c) => s + c.pct, 0);
+  let warm = 0, cool = 0;
+  chro.forEach(c => { const h = hueDeg(c); (h <= 115 || h >= 335) ? warm += c.pct : cool += c.pct; });
+  const warmPct = (warm + cool) ? warm / (warm + cool) : 0;
+  const temp = chromaWeight < 0.06 ? 'neutral' : warmPct > 0.65 ? 'warm' : warmPct < 0.35 ? 'cool' : 'balanced';
+  if (chromaWeight < 0.06 || !chro.length) return { scheme: 'neutral', temp, warmPct };
+
+  // collapse hues into groups (within 25 deg), weighted circular-mean centres
+  const groups = [];
+  chro.slice().sort((a, b) => b.pct - a.pct).forEach(c => {
+    const h = hueDeg(c), rad = h * Math.PI/180;
+    const g = groups.find(g => angDist(g.h, h) <= 25);
+    if (g) { g.sx += c.pct*Math.cos(rad); g.sy += c.pct*Math.sin(rad); g.w += c.pct; g.h = (Math.atan2(g.sy, g.sx)*180/Math.PI + 360) % 360; }
+    else groups.push({ h, sx: c.pct*Math.cos(rad), sy: c.pct*Math.sin(rad), w: c.pct });
+  });
+  const sig = groups.filter(g => g.w >= 0.04).sort((a, b) => b.w - a.w);
+  const H = sig.map(g => g.h), n = sig.length;
+  let maxGap = 0;
+  for (let i = 0; i < n; i++) for (let j = i+1; j < n; j++) maxGap = Math.max(maxGap, angDist(H[i], H[j]));
+  let scheme;
+  if (n <= 1) {
+    let sp = 0; const hs = chro.map(hueDeg);
+    for (let i = 0; i < hs.length; i++) for (let j = i+1; j < hs.length; j++) sp = Math.max(sp, angDist(hs[i], hs[j]));
+    scheme = sp < 18 ? 'monochrome' : 'analogous';
+  } else if (maxGap < 80) scheme = 'analogous';        // hues clustered in one arc, regardless of group count
+  else if (n === 2) scheme = maxGap >= 140 ? 'complementary' : 'contrast';
+  else if (n === 3) {
+    const gp = [angDist(H[0],H[1]), angDist(H[1],H[2]), angDist(H[0],H[2])];
+    scheme = gp.filter(g => g >= 95 && g <= 145).length >= 2 ? 'triadic' : 'split-complementary';
+  } else scheme = 'polychrome';
+  return { scheme, temp, warmPct };
 }
 
 // ============================================================
@@ -2167,6 +2376,10 @@ function renderSelPalette(dom, srcLabel) {
   });
   document.getElementById('sel-pal-count').textContent = 'k' + top.length;
   document.getElementById('sel-pal-src').textContent = srcLabel || '';
+  // harmony reads the whole color set, so classify from the full ranked list
+  const harm = classifyHarmony(dom);
+  const harmEl = document.getElementById('sel-pal-harm');
+  if (harmEl) harmEl.textContent = harm ? harm.scheme + ' · ' + harm.temp : '';
 }
 function resetSelPalette() {
   const ribbon = document.getElementById('sel-pal-ribbon');
@@ -2179,7 +2392,21 @@ function resetSelPalette() {
   if (count) count.textContent = '';
   const src = document.getElementById('sel-pal-src');
   if (src) src.textContent = '';
+  const harm = document.getElementById('sel-pal-harm');
+  if (harm) harm.textContent = '';
 }
+// palette mode buttons: re-rank the cached clusters in place (no re-clustering),
+// so dominant/accent/spread switch instantly. ribbon widths stay tied to real
+// coverage, so the palette ranks by relevance but never lies about area.
+document.querySelectorAll('#sel-pal-modes [data-pal-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.palMode = btn.dataset.palMode;
+    document.querySelectorAll('#sel-pal-modes [data-pal-mode]').forEach(b => b.classList.toggle('active', b === btn));
+    if (state._selClusters) state._selDom = applyPalMode(state._selClusters);
+    if (state.wholeClusters) state.wholeDom = applyPalMode(state.wholeClusters);
+    refreshSelPalette();
+  });
+});
 function renderMatch(data) {
   const section = document.getElementById('match-section');
   if (!state.palette || !state.palette.length) { section.style.display = 'none'; return; }
@@ -2190,6 +2417,7 @@ function renderMatch(data) {
   const step = Math.max(1, Math.floor(N / 20000));
   let total = 0;
   for (let i = 0; i < data.length; i += 4*step) {
+    if (data[i+3] === 0) continue;
     const r = data[i], g = data[i+1], b = data[i+2];
     let bi = 0, bd = Infinity;
     for (let c = 0; c < pal.length; c++) { const cc = pal[c].rgb; const d = (r-cc[0])**2+(g-cc[1])**2+(b-cc[2])**2; if (d<bd){bd=d;bi=c;} }
@@ -2326,13 +2554,14 @@ function saveRegion() {
   tmp.getContext('2d').drawImage(state.src, x, y, w, h, 0, 0, tw, th);
   const thumb = tmp.toDataURL('image/jpeg', 0.85);
   const data = state.srcCtx.getImageData(x, y, w, h).data;
-  const dom = kmeansColors(data, 6, 6);
-  let rSum=0,gSum=0,bSum=0; for (let i=0;i<data.length;i+=4){rSum+=data[i];gSum+=data[i+1];bSum+=data[i+2];}
-  const N = data.length/4;
+  if (sel.shape === 'ellipse') maskEllipse(data, w, h);
+  const dom = kmeansColors(data, 6, 6, { w, h });
+  let rSum=0,gSum=0,bSum=0,cnt=0; for (let i=0;i<data.length;i+=4){ if (data[i+3]===0) continue; rSum+=data[i];gSum+=data[i+1];bSum+=data[i+2];cnt++; }
+  const N = cnt || 1;
   state.regions.push({
     id: Date.now()+Math.random(),
     label: 'Region ' + (++state.regionCounter),
-    x, y, w, h,
+    x, y, w, h, shape: sel.shape || 'rect',
     norm: [x/state.w, y/state.h, (x+w)/state.w, (y+h)/state.h],
     thumb, dimensions: `${Math.round(w*state.origW/state.w)}×${Math.round(h*state.origH/state.h)}`,
     meanHex: rgbToHex(rSum/N,gSum/N,bSum/N), dom,
@@ -2370,7 +2599,7 @@ function jumpToRegion(c) {
   const cx = c.x + c.w/2, cy = c.y + c.h/2;
   state.view.tx = vw/2 - cx*s; state.view.ty = vh/2 - cy*s;
   clampPan();
-  state.selection = { x: c.x, y: c.y, w: c.w, h: c.h };
+  state.selection = { x: c.x, y: c.y, w: c.w, h: c.h, shape: c.shape || 'rect' };
   document.getElementById('btn-add').disabled = false;
   render(); analyzeSelection();
 }
@@ -2484,6 +2713,7 @@ window.addEventListener('keydown', (e) => {
     case 'm': setTool('measure'); break;
     case 'p': setTool('pick'); break;
     case 'g': setTool('loupe'); break;
+    case 'c': if (!e.ctrlKey && !e.metaKey && !e.altKey) setTool('ellipse'); break;
     case '[': if (state.tool === 'loupe') { state.loupeZoom = Math.max(2, state.loupeZoom - 1); render(); } break;
     case ']': if (state.tool === 'loupe') { state.loupeZoom = Math.min(24, state.loupeZoom + 1); render(); } break;
     case '+': case '=': zoomBy(1.4); break;
