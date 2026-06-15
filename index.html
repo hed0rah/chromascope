@@ -682,7 +682,7 @@ kbd {
 .modal-head h2 { margin: 0; font-size: 14px; font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--fg-strong); letter-spacing: 0.02em; }
 .modal-head .close { margin-left: auto; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
 .modal-head .close:hover { color: var(--fg-strong); }
-.modal-tabs { display: flex; gap: 4px; padding: 10px 16px 0; }
+.modal-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 16px 0; }
 .modal-tabs button {
   background: transparent; border: 1px solid var(--border); border-bottom: none;
   color: var(--muted); padding: 6px 14px; cursor: pointer; font-size: 12px; font-family: "IBM Plex Mono", ui-monospace, monospace;
@@ -1189,6 +1189,9 @@ kbd {
     <div class="modal-tabs" id="export-tabs">
       <button data-tab="css" class="active">CSS variables</button>
       <button data-tab="json">Palette JSON</button>
+      <button data-tab="gpl">GIMP .gpl</button>
+      <button data-tab="hex">Hex list</button>
+      <button data-tab="ase">Adobe .ase</button>
       <button data-tab="painting">painting.json</button>
     </div>
     <div class="modal-body">
@@ -2818,16 +2821,29 @@ function buildExport() {
   const hint = document.getElementById('export-hint');
   const ta = document.getElementById('export-text');
   const pal = state.palette || [];
+  const noPal = 'No palette yet. Extract one from the Palette panel first.';
   if (exportTab === 'css') {
-    hint.textContent = pal.length ? 'CSS custom properties for the extracted palette. Extract a palette first if this is empty.' : 'No palette yet. Click "extract" in the Image palette panel.';
+    hint.textContent = pal.length ? 'CSS custom properties for the extracted palette.' : noPal;
     let out = ':root {\n';
     pal.forEach((p,i) => { out += `  --c-${i+1}: ${p.hex}; /* ${p.name} ${(p.pct*100).toFixed(0)}% */\n`; });
     pal.forEach((p) => { out += `  --${slugify(p.name)}: ${p.hex};\n`; });
     out += '}';
     ta.value = pal.length ? out : '';
   } else if (exportTab === 'json') {
-    hint.textContent = 'Palette as JSON (name, hex, rgb, coverage).';
+    hint.textContent = pal.length ? 'Palette as JSON (name, hex, rgb, coverage).' : noPal;
     ta.value = pal.length ? JSON.stringify(pal.map(p => ({ name: p.name, hex: p.hex, rgb: p.rgb, pct: +p.pct.toFixed(4) })), null, 2) : '';
+  } else if (exportTab === 'gpl') {
+    hint.textContent = pal.length ? 'GIMP / Krita / Inkscape palette (.gpl). Import into the swatches panel.' : noPal;
+    const id = slugify(state.filename.replace(/\.[a-z0-9]+$/i, '')) || 'chromascope';
+    let out = 'GIMP Palette\nName: ' + id + '\nColumns: 0\n#\n';
+    pal.forEach(p => { const [r,g,b] = p.rgb; out += `${String(r).padStart(3)} ${String(g).padStart(3)} ${String(b).padStart(3)}\t${p.name}\n`; });
+    ta.value = pal.length ? out : '';
+  } else if (exportTab === 'hex') {
+    hint.textContent = pal.length ? 'Plain hex list, one per line.' : noPal;
+    ta.value = pal.length ? pal.map(p => p.hex).join('\n') : '';
+  } else if (exportTab === 'ase') {
+    hint.textContent = pal.length ? 'Adobe Swatch Exchange (.ase) for Photoshop / Illustrator. Binary format, use Download.' : noPal;
+    ta.value = pal.length ? '(binary .ase, click Download)' : '';
   } else {
     hint.textContent = 'painting.json skeleton for the ArtScope engine. Palette -> pigments[], saved regions -> hotspots[] (normalized coords). Fill in the prose fields, then run the engine scripts.';
     ta.value = JSON.stringify(buildPaintingJson(), null, 2);
@@ -2866,21 +2882,60 @@ function buildPaintingJson() {
     })),
   };
 }
+// Adobe Swatch Exchange (.ase): big-endian binary, one color block per swatch.
+function buildAse(pal) {
+  const names = pal.map(p => {
+    const s = p.name || 'Color', u = [];
+    for (let i = 0; i < s.length; i++) u.push(s.charCodeAt(i));
+    u.push(0);                                   // UTF-16 null terminator
+    return u;
+  });
+  let total = 12;                                // "ASEF" + version(4) + block count(4)
+  names.forEach(u => { total += 6 + (2 + u.length*2 + 4 + 12 + 2); });
+  const dv = new DataView(new ArrayBuffer(total));
+  let o = 0;
+  const u8 = v => { dv.setUint8(o, v); o += 1; };
+  const u16 = v => { dv.setUint16(o, v); o += 2; };
+  const u32 = v => { dv.setUint32(o, v); o += 4; };
+  const f32 = v => { dv.setFloat32(o, v); o += 4; };
+  [0x41,0x53,0x45,0x46].forEach(u8);             // ASEF
+  u16(1); u16(0);                                // version 1.0
+  u32(pal.length);
+  pal.forEach((p, k) => {
+    const u = names[k];
+    u16(0x0001); u32(2 + u.length*2 + 4 + 12 + 2); // color entry block + data length
+    u16(u.length);                               // name length (UTF-16 units incl null)
+    u.forEach(u16);                              // UTF-16BE name
+    [0x52,0x47,0x42,0x20].forEach(u8);           // "RGB "
+    f32(p.rgb[0]/255); f32(p.rgb[1]/255); f32(p.rgb[2]/255);
+    u16(2);                                       // color type: normal
+  });
+  return new Uint8Array(dv.buffer);
+}
+function downloadBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('Downloaded ' + name);
+}
 document.getElementById('export-copy').addEventListener('click', () => {
+  if (exportTab === 'ase') { toast('Binary format, use Download'); return; }
   const ta = document.getElementById('export-text');
   if (!ta.value) { toast('Nothing to copy'); return; }
   copyText(ta.value); toast('Copied to clipboard');
 });
 document.getElementById('export-download').addEventListener('click', () => {
+  const id = slugify(state.filename.replace(/\.[a-z0-9]+$/i, '')) || 'chromascope';
+  if (exportTab === 'ase') {
+    const pal = state.palette || [];
+    if (!pal.length) { toast('Nothing to download'); return; }
+    downloadBlob(new Blob([buildAse(pal)], { type: 'application/octet-stream' }), id + '-palette.ase');
+    return;
+  }
   const ta = document.getElementById('export-text');
   if (!ta.value) { toast('Nothing to download'); return; }
-  const id = slugify(state.filename.replace(/\.[a-z0-9]+$/i, ''));
-  const names = { css: id + '-palette.css', json: id + '-palette.json', painting: 'painting.json' };
-  const blob = new Blob([ta.value], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = names[exportTab]; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  toast('Downloaded ' + names[exportTab]);
+  const names = { css: id + '-palette.css', json: id + '-palette.json', gpl: id + '.gpl', hex: id + '-palette.txt', painting: 'painting.json' };
+  downloadBlob(new Blob([ta.value], { type: 'text/plain' }), names[exportTab] || (id + '.txt'));
 });
 
 // ============================================================
