@@ -592,9 +592,8 @@ kbd {
   border-left: 1px solid var(--border);
   background: var(--bg);
   padding: 10px 18px 12px;
-  /* take leftover width, but always reserve the middle for up to 4 region
-     cards (4 x 230px) plus the regions header (~360px) */
-  width: clamp(300px, calc(100vw - 1320px), 620px);
+  /* docked width matches the analysis pane column directly above it */
+  width: 372px;
   display: flex;
   flex-direction: column;
   gap: 11px;
@@ -606,9 +605,46 @@ kbd {
   color: var(--muted);
   display: flex; align-items: baseline; gap: 10px;
 }
-.compare-palette .cp-head .cp-src { color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
-.compare-palette .cp-head .cp-harm { color: var(--accent); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
-.compare-palette .cp-head .cp-count { margin-left: auto; color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; }
+.compare-palette .cp-head .cp-title { color: var(--muted); }
+.compare-palette .cp-sub { display: flex; align-items: baseline; gap: 10px; min-height: 12px; }
+.compare-palette .cp-sub .cp-src { color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
+.compare-palette .cp-sub .cp-harm { color: var(--accent); font-size: 8.5px; letter-spacing: 0.04em; text-transform: none; }
+.compare-palette .cp-sub .cp-count { margin-left: auto; color: var(--muted-strong); font-size: 8.5px; letter-spacing: 0.04em; }
+/* source toggle + action buttons in the palette header */
+.cp-source { display: flex; }
+.cp-src-btn {
+  font-family: inherit; font-size: 9px; letter-spacing: .03em; text-transform: none;
+  padding: 2px 8px; border: 1px solid var(--border-strong); background: transparent;
+  color: var(--muted); cursor: pointer;
+}
+.cp-src-btn + .cp-src-btn { border-left: none; }
+.cp-src-btn:hover { color: var(--fg-strong); }
+.cp-src-btn.active { background: var(--surface-alt); color: var(--fg-strong); }
+.cp-acts { margin-left: auto; display: flex; gap: 4px; }
+.cp-act {
+  font-family: inherit; font-size: 9px; letter-spacing: .03em; text-transform: none;
+  padding: 2px 8px; border: 1px solid var(--border-strong); border-radius: 3px;
+  background: transparent; color: var(--muted); cursor: pointer; transition: all .12s;
+}
+.cp-act:hover { color: var(--fg-strong); border-color: var(--fg); }
+/* committed (extracted) palette grid, lives inside the panel now */
+.compare-palette .cp-committed { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
+.compare-palette .cp-committed-head {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
+}
+/* docked: cap the committed grid so it scrolls instead of growing the bottom
+   strip and squeezing the canvas. floating: no cap, the window resizes. */
+.compare-palette:not(.floating) .cp-committed { max-height: 150px; overflow-y: auto; }
+/* floating window: native resize + fixed position, drag by the header */
+.compare-palette.floating {
+  position: fixed; z-index: 45;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 14px 50px rgba(0,0,0,0.55);
+  resize: both; overflow: auto;
+  min-width: 300px; min-height: 220px; max-width: 92vw; max-height: 88vh;
+}
+.compare-palette.floating .cp-head { cursor: move; user-select: none; }
 /* proportional ribbon + legend: each ribbon segment's width encodes its
    coverage share; the hex codes live in the legend below, where they have
    room and never get clipped no matter how thin a segment is. */
@@ -1069,13 +1105,6 @@ kbd {
           <svg class="hue-wheel" id="hue-wheel" viewBox="-110 -110 220 220"></svg>
         </div>
 
-        <!-- 12-color image palette + pigment match -->
-        <div class="an-section" id="pal-section">
-          <h3>Image palette <span class="count" id="pal-count"></span><button class="mini-btn" id="pal-extract">extract</button></h3>
-          <div id="pal-empty" class="empty-state">whole-image k-means · rename + classify</div>
-          <div class="palette-grid" id="palette-grid" style="display:none"></div>
-        </div>
-
         <div class="an-section" id="match-section" style="display:none">
           <h3>Palette match <span class="count">nearest pigment</span></h3>
           <div class="match-list" id="match-list"></div>
@@ -1104,7 +1133,18 @@ kbd {
       <div class="compare-empty">Sample a region, then click "Save region" to stack regions here side by side. Saved regions also feed the Export panel.</div>
     </div>
     <div class="compare-palette" id="sel-palette">
-      <div class="cp-head">Selection palette <span class="cp-src" id="sel-pal-src"></span><span class="cp-harm" id="sel-pal-harm"></span><span class="cp-count" id="sel-pal-count"></span></div>
+      <div class="cp-head" id="sel-pal-head">
+        <span class="cp-title">Palette</span>
+        <div class="cp-source" id="sel-pal-source">
+          <button class="cp-src-btn active" data-pal-source="selection" title="palette of the current selection">selection</button>
+          <button class="cp-src-btn" data-pal-source="whole" title="palette of the whole image">whole image</button>
+        </div>
+        <div class="cp-acts">
+          <button class="cp-act" id="sel-pal-extract" title="freeze this palette for naming and export">extract</button>
+          <button class="cp-act" id="sel-pal-popout" title="pop out into a movable window">pop out</button>
+        </div>
+      </div>
+      <div class="cp-sub"><span class="cp-src" id="sel-pal-src"></span><span class="cp-harm" id="sel-pal-harm"></span><span class="cp-count" id="sel-pal-count"></span></div>
       <div class="cp-modes" id="sel-pal-modes">
         <button class="cp-mode-btn active" data-pal-mode="dominant" title="rank by area · the colors that fill the most of the selection">dominant</button>
         <button class="cp-mode-btn" data-pal-mode="accent" title="surface vivid, distinct minority colors · a small red hat can outrank big neutral fields">accent</button>
@@ -1113,6 +1153,10 @@ kbd {
       </div>
       <div class="cp-ribbon" id="sel-pal-ribbon" style="display:none"></div>
       <div class="cp-legend" id="sel-pal-legend" style="display:none"></div>
+      <div class="cp-committed" id="cp-committed" style="display:none">
+        <div class="cp-committed-head">extracted <span class="count" id="pal-count"></span></div>
+        <div class="palette-grid" id="palette-grid"></div>
+      </div>
       <div class="cp-empty" id="sel-pal-empty">load an image to see its palette</div>
     </div>
   </div>
@@ -1246,7 +1290,8 @@ const state = {
   _selDom: null,                  // current selection's ranked palette (display)
   _selClusters: null,             // raw kmeans clusters for selection (re-ranked per mode)
   wholeClusters: null,            // raw kmeans clusters for whole image (fallback)
-  palMode: 'dominant',            // dominant | accent | spread
+  palMode: 'dominant',            // dominant | accent | spread | subject
+  palSource: 'selection',         // selection | whole (which pixels the palette reads)
   regions: [],                    // saved regions for compare + export
   regionCounter: 0,
   measure: null,                  // {a:{x,y}, b:{x,y}} in internal px
@@ -2331,12 +2376,19 @@ function renderHueWheel(Hh) {
 // Selection palette: dominant colors as prominence-tiered bars.
 // Source is the current selection, or the whole image when nothing is selected.
 function refreshSelPalette() {
+  const source = state.palSource || 'selection';
+  if (source === 'whole') {
+    if (state.wholeDom && state.wholeDom.length) renderSelPalette(state.wholeDom, 'whole image');
+    else resetSelPalette();
+    return;
+  }
+  // selection source, falling back to the whole image when nothing is selected
   if (state.selection && state._selDom && state._selDom.length) {
     const sf = state.origW / state.w;
     const w = Math.round(state.selection.w * sf), h = Math.round(state.selection.h * sf);
     renderSelPalette(state._selDom, 'selection ' + w + '×' + h);
   } else if (state.wholeDom && state.wholeDom.length) {
-    renderSelPalette(state.wholeDom, 'whole image');
+    renderSelPalette(state.wholeDom, 'whole image · no selection');
   } else {
     resetSelPalette();
   }
@@ -2407,6 +2459,52 @@ document.querySelectorAll('#sel-pal-modes [data-pal-mode]').forEach(btn => {
     refreshSelPalette();
   });
 });
+// source toggle: read the current selection, or the whole image
+document.querySelectorAll('#sel-pal-source [data-pal-source]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.palSource = btn.dataset.palSource;
+    document.querySelectorAll('#sel-pal-source [data-pal-source]').forEach(b => b.classList.toggle('active', b === btn));
+    refreshSelPalette();
+  });
+});
+// the live palette currently on display, used by extract to commit it
+function currentPaletteDom() {
+  if ((state.palSource || 'selection') === 'whole') return state.wholeDom || [];
+  return (state.selection && state._selDom && state._selDom.length) ? state._selDom : (state.wholeDom || []);
+}
+// pop-out: float the palette into a movable, natively-resizable window
+(function () {
+  const panel = document.getElementById('sel-palette');
+  const head = document.getElementById('sel-pal-head');
+  const btn = document.getElementById('sel-pal-popout');
+  let drag = null;
+  btn.addEventListener('click', () => {
+    const floating = panel.classList.toggle('floating');
+    btn.textContent = floating ? 'dock' : 'pop out';
+    if (floating) {
+      const w = 460, h = 380;
+      panel.style.width = w + 'px'; panel.style.height = h + 'px';
+      panel.style.left = Math.max(12, (window.innerWidth - w) / 2) + 'px';
+      panel.style.top = Math.max(60, (window.innerHeight - h) / 2 - 40) + 'px';
+    } else {
+      panel.style.left = panel.style.top = panel.style.width = panel.style.height = '';
+    }
+  });
+  head.addEventListener('mousedown', (e) => {
+    if (!panel.classList.contains('floating') || e.target.closest('button')) return;
+    const r = panel.getBoundingClientRect();
+    drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!drag) return;
+    let x = e.clientX - drag.dx, y = e.clientY - drag.dy;
+    x = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, x));
+    y = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, y));
+    panel.style.left = x + 'px'; panel.style.top = y + 'px';
+  });
+  window.addEventListener('mouseup', () => { drag = null; });
+})();
 function renderMatch(data) {
   const section = document.getElementById('match-section');
   if (!state.palette || !state.palette.length) { section.style.display = 'none'; return; }
@@ -2434,27 +2532,29 @@ function renderMatch(data) {
 }
 
 // ============================================================
-// IMAGE PALETTE (whole image)
+// PALETTE EXTRACTION
+// commit the live palette (current source + mode) so it can be named, pigment-
+// matched, and exported. one engine: no separate whole-image extractor.
 // ============================================================
-document.getElementById('pal-extract').addEventListener('click', extractPalette);
-// topbar Palette button: extract the 12-color palette and scroll it into view,
-// without hiding the stats/histogram above it.
+document.getElementById('sel-pal-extract').addEventListener('click', extractPalette);
+// topbar Palette button: read the whole image and commit it as the palette
 document.getElementById('palette-btn').addEventListener('click', () => {
+  state.palSource = 'whole';
+  document.querySelectorAll('#sel-pal-source [data-pal-source]').forEach(b => b.classList.toggle('active', b.dataset.palSource === 'whole'));
+  refreshSelPalette();
   extractPalette();
-  document.getElementById('pal-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 function extractPalette() {
-  if (!state.srcImageData) { toast('No pixel data to sample'); return; }
-  const dom = kmeansColors(state.srcImageData.data, 12, 10);
-  state.palette = dom.map((c, i) => ({ name: 'Color ' + (i+1), hex: c.hex, rgb: c.rgb, pct: c.pct }));
+  const dom = currentPaletteDom();
+  if (!dom || !dom.length) { toast('No colors to extract'); return; }
+  state.palette = dom.slice(0, 12).map((c, i) => ({ name: 'Color ' + (i+1), hex: c.hex, rgb: c.rgb, pct: c.pct }));
   renderPalette();
-  if (state.selection) analyzeSelection();
+  if (state.selection) renderMatch(selectionPixels().data);
   toast('Extracted ' + state.palette.length + '-color palette');
 }
 function renderPalette() {
   const grid = document.getElementById('palette-grid');
-  document.getElementById('pal-empty').style.display = 'none';
-  grid.style.display = '';
+  document.getElementById('cp-committed').style.display = '';
   document.getElementById('pal-count').textContent = state.palette.length + ' colors';
   grid.innerHTML = '';
   state.palette.forEach((p, idx) => {
@@ -2465,15 +2565,15 @@ function renderPalette() {
       <div class="pal-meta"><span class="hex">${p.hex}</span><span>${(p.pct*100).toFixed(0)}%</span></div>`;
     cell.querySelector('.pal-sw').addEventListener('click', () => { copyText(p.hex); flash(cell); });
     cell.querySelector('.pal-name').addEventListener('input', (e) => { state.palette[idx].name = e.target.value; });
-    cell.querySelector('.pal-name').addEventListener('change', () => { if (state.selection) renderMatch(state.srcCtx.getImageData(Math.round(state.selection.x),Math.round(state.selection.y),Math.max(1,Math.round(state.selection.w)),Math.max(1,Math.round(state.selection.h))).data); });
+    cell.querySelector('.pal-name').addEventListener('change', () => { if (state.selection) renderMatch(selectionPixels().data); });
     grid.appendChild(cell);
   });
 }
 function resetPalette() {
   state.palette = null;
-  document.getElementById('palette-grid').style.display = 'none';
+  const cm = document.getElementById('cp-committed');
+  if (cm) cm.style.display = 'none';
   document.getElementById('palette-grid').innerHTML = '';
-  document.getElementById('pal-empty').style.display = '';
   document.getElementById('pal-count').textContent = '';
   document.getElementById('match-section').style.display = 'none';
 }
