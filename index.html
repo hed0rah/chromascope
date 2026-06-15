@@ -457,12 +457,6 @@ kbd {
   gap: 8px;
 }
 .an-section h3 .count { color: var(--muted-strong); font-weight: 400; font-size: 8.5px; }
-.an-section h3 .mini-btn {
-  background: transparent; border: 1px solid var(--border-strong);
-  color: var(--muted-strong); font-size: 9px; padding: 2px 7px; cursor: pointer;
-  letter-spacing: 0.06em; text-transform: uppercase; font-family: "IBM Plex Mono", ui-monospace, monospace;
-}
-.an-section h3 .mini-btn:hover { color: var(--fg-strong); border-color: var(--fg); }
 .empty-state { color: var(--muted); font-size: 10.5px; line-height: 1.4; }
 .an-section-muted { opacity: .6; }
 .an-section h3 .count.src { text-transform: none; letter-spacing: 0.02em; }
@@ -2504,6 +2498,13 @@ function currentPaletteDom() {
     panel.style.left = x + 'px'; panel.style.top = y + 'px';
   });
   window.addEventListener('mouseup', () => { drag = null; });
+  // keep the floating window on-screen if the browser window shrinks
+  window.addEventListener('resize', () => {
+    if (!panel.classList.contains('floating')) return;
+    const x = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, parseFloat(panel.style.left) || 0));
+    const y = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, parseFloat(panel.style.top) || 0));
+    panel.style.left = x + 'px'; panel.style.top = y + 'px';
+  });
 })();
 function renderMatch(data) {
   const section = document.getElementById('match-section');
