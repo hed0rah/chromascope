@@ -458,6 +458,11 @@ kbd {
 }
 .an-section h3 .count { color: var(--muted-strong); font-weight: 400; font-size: 8.5px; }
 .empty-state { color: var(--muted); font-size: 10.5px; line-height: 1.4; }
+/* value / notan tiers */
+.notan-ctl { display: flex; gap: 4px; margin-bottom: 8px; }
+.notan-canvas { width: 100%; height: auto; display: block; border: 1px solid var(--border); }
+.notan-bar { display: flex; height: 14px; margin-top: 6px; border: 1px solid var(--border); }
+.notan-bar .notan-seg { min-width: 2px; }
 .an-section-muted { opacity: .6; }
 .an-section h3 .count.src { text-transform: none; letter-spacing: 0.02em; }
 
@@ -1105,6 +1110,19 @@ kbd {
           <svg class="hue-wheel" id="gamut-scatter" viewBox="-118 -112 236 224"></svg>
         </div>
 
+        <!-- value / notan tiers -->
+        <div class="an-section">
+          <h3>Value tiers <span class="count" id="notan-count">3 tiers</span></h3>
+          <div class="notan-ctl" id="notan-ctl">
+            <button class="cp-mode-btn" data-notan="2">2</button>
+            <button class="cp-mode-btn active" data-notan="3">3</button>
+            <button class="cp-mode-btn" data-notan="4">4</button>
+            <button class="cp-mode-btn" data-notan="5">5</button>
+          </div>
+          <canvas id="notan-canvas" class="notan-canvas"></canvas>
+          <div class="notan-bar" id="notan-bar"></div>
+        </div>
+
         <div class="an-section" id="match-section" style="display:none">
           <h3>Palette match <span class="count">nearest pigment</span></h3>
           <div class="match-list" id="match-list"></div>
@@ -1292,6 +1310,8 @@ const state = {
   wholeClusters: null,            // raw kmeans clusters for whole image (fallback)
   palMode: 'dominant',            // dominant | accent | spread | subject
   palSource: 'selection',         // selection | whole (which pixels the palette reads)
+  notanTiers: 3,                  // number of value tiers for the notan study
+  _notanRegion: null,             // last source region drawn into the notan canvas
   regions: [],                    // saved regions for compare + export
   regionCounter: 0,
   measure: null,                  // {a:{x,y}, b:{x,y}} in internal px
@@ -2114,6 +2134,7 @@ function analyzeSelection() {
   renderRgbHist(Rh, Gh, Bh);
   renderHueWheel(Hh);
   renderGamut(data);
+  renderNotan(Math.round(sel.x), Math.round(sel.y), w, h);
   state._selDom = applyPalMode(state._selClusters);
   refreshSelPalette();
   renderMatch(data);
@@ -2127,6 +2148,7 @@ function analyzeWhole() {
   renderRgbHist(Rh, Gh, Bh);
   renderHueWheel(Hh);
   renderGamut(state.srcImageData.data);
+  renderNotan(0, 0, state.w, state.h);
   return true;
 }
 function kmeansColors(data, k, iterations, opts) {
@@ -2403,6 +2425,43 @@ function renderGamut(data) {
   }
   svg.innerHTML = grid + dots;
 }
+// value / notan study: posterize the source region to N luminance tiers, the
+// classic value sketch that strips hue away so you read the composition's
+// light-dark structure. coverage bar shows how much area sits in each tier.
+function renderNotan(sx, sy, sw, sh) {
+  const cv = document.getElementById('notan-canvas');
+  if (!cv || !state.src) return;
+  state._notanRegion = { sx, sy, sw, sh };
+  const tiers = state.notanTiers || 3;
+  const TW = 320, TH = Math.max(30, Math.min(360, Math.round(TW * sh / sw)));
+  cv.width = TW; cv.height = TH;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(state.src, sx, sy, sw, sh, 0, 0, TW, TH);
+  const img = ctx.getImageData(0, 0, TW, TH), d = img.data;
+  const counts = new Array(tiers).fill(0);
+  const grayOf = t => tiers <= 1 ? 128 : Math.round(t / (tiers - 1) * 255);
+  for (let i = 0; i < d.length; i += 4) {
+    let t = Math.floor(luminance(d[i], d[i+1], d[i+2]) / 256 * tiers);
+    if (t >= tiers) t = tiers - 1; if (t < 0) t = 0;
+    counts[t]++;
+    const g = grayOf(t); d[i] = d[i+1] = d[i+2] = g;
+  }
+  ctx.putImageData(img, 0, 0);
+  const total = TW * TH || 1;
+  document.getElementById('notan-bar').innerHTML = counts.map((c, t) => {
+    const g = grayOf(t);
+    return `<div class="notan-seg" style="flex:${c} 0 0; background:rgb(${g},${g},${g})" title="value ${t+1}/${tiers}: ${(c/total*100).toFixed(0)}%"></div>`;
+  }).join('');
+  document.getElementById('notan-count').textContent = tiers + ' tiers';
+}
+document.querySelectorAll('#notan-ctl [data-notan]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.notanTiers = +btn.dataset.notan;
+    document.querySelectorAll('#notan-ctl [data-notan]').forEach(b => b.classList.toggle('active', b === btn));
+    const r = state._notanRegion;
+    if (r) renderNotan(r.sx, r.sy, r.sw, r.sh);
+  });
+});
 // Selection palette: dominant colors as prominence-tiered bars.
 // Source is the current selection, or the whole image when nothing is selected.
 function refreshSelPalette() {
