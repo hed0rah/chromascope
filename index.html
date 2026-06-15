@@ -656,6 +656,28 @@ kbd {
 .compare-palette .cp-wheel svg { width: 100%; max-width: 240px; height: auto; display: block; margin: 0 auto; }
 /* floating: ribbon grows with the window height */
 .compare-palette.floating .cp-ribbon { flex: 1 1 60px; min-height: 60px; max-height: 200px; }
+/* MixLab floating panel */
+.mixlab {
+  position: fixed; z-index: 46; display: none; flex-direction: column; gap: 10px;
+  width: 360px; min-width: 300px; min-height: 320px; max-width: 92vw; max-height: 88vh;
+  background: var(--bg); border: 1px solid var(--border-strong);
+  box-shadow: 0 14px 50px rgba(0,0,0,0.6); resize: both; overflow: auto; padding: 10px 14px 14px;
+}
+.mixlab.show { display: flex; }
+.mix-head { display: flex; align-items: baseline; gap: 10px; cursor: move; user-select: none; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.mix-head .cp-title { color: var(--fg-strong); }
+.mix-head .mix-sub { font-size: 8.5px; text-transform: none; letter-spacing: 0.02em; color: var(--muted-strong); }
+.mix-head .cp-acts { margin-left: auto; }
+.mix-harmonies { display: flex; flex-wrap: wrap; gap: 4px; }
+.mix-wheel { width: 100%; max-width: 250px; height: auto; display: block; margin: 2px auto; }
+.mix-rotate { display: flex; align-items: center; gap: 8px; }
+.mix-rotate label { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.mix-rotate input { flex: 1; accent-color: var(--accent); cursor: pointer; }
+.mix-rotate span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; color: var(--fg-strong); min-width: 34px; text-align: right; }
+.mix-swatches { display: flex; flex-wrap: wrap; gap: 3px; }
+.mix-sw { flex: 1 1 56px; min-width: 52px; height: 46px; display: flex; align-items: flex-end; justify-content: center; cursor: pointer; border: 1px solid rgba(0,0,0,0.3); }
+.mix-sw span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 8px; background: rgba(0,0,0,0.5); color: #fff; padding: 1px 3px; margin-bottom: 3px; border-radius: 2px; }
+.mix-empty { color: var(--muted); font-style: italic; font-size: 11px; padding: 10px 0; }
 /* proportional ribbon + legend: each ribbon segment's width encodes its
    coverage share; the hex codes live in the legend below, where they have
    room and never get clipped no matter how thin a segment is. */
@@ -902,6 +924,7 @@ kbd {
   <input type="file" id="file-input" accept="image/*" hidden>
   <button class="btn" id="load-btn">Load</button>
   <button class="btn ghost" id="palette-btn" disabled>Palette</button>
+  <button class="btn ghost" id="mixlab-btn" disabled title="open MixLab: rotate the palette + harmony schemes">MixLab</button>
   <button class="btn ghost" id="export-btn" disabled>Export</button>
   <button class="btn ghost geo-toggle" id="geo-toggle" title="Geometry mode">Geometry</button>
   <button class="btn ghost icon" id="about-btn" title="About / shortcuts">?</button>
@@ -1223,6 +1246,30 @@ kbd {
   </div>
 </div>
 
+<div class="mixlab" id="mixlab">
+  <div class="mix-head" id="mix-head">
+    <span class="cp-title">MixLab</span>
+    <span class="mix-sub">rotate the palette · keep its relationships</span>
+    <div class="cp-acts"><button class="cp-act" id="mix-close">close</button></div>
+  </div>
+  <div class="mix-harmonies" id="mix-harmonies">
+    <button class="cp-mode-btn active" data-harmony="original" title="the extracted palette as-is">original</button>
+    <button class="cp-mode-btn" data-harmony="complementary" title="two hues opposite on the wheel">complementary</button>
+    <button class="cp-mode-btn" data-harmony="analogous" title="adjacent hues">analogous</button>
+    <button class="cp-mode-btn" data-harmony="triadic" title="three hues 120° apart">triadic</button>
+    <button class="cp-mode-btn" data-harmony="tetradic" title="four hues 90° apart">tetradic</button>
+    <button class="cp-mode-btn" data-harmony="split" title="a hue plus the two beside its complement">split</button>
+    <button class="cp-mode-btn" data-harmony="mono" title="one hue, stepped in lightness">mono</button>
+  </div>
+  <svg class="mix-wheel" id="mix-wheel" viewBox="-122 -118 244 236"></svg>
+  <div class="mix-rotate">
+    <label>rotate</label>
+    <input type="range" id="mix-rot" min="0" max="360" value="0">
+    <span id="mix-rot-val">0°</span>
+  </div>
+  <div class="mix-swatches" id="mix-swatches"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1423,6 +1470,7 @@ function finishLoad(label) {
   document.getElementById('empty-pane').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('palette-btn').disabled = false;
+  document.getElementById('mixlab-btn').disabled = false;
   document.getElementById('export-btn').disabled = false;
   resizeCanvases();
   fitView();
@@ -3021,6 +3069,84 @@ document.getElementById('export-download').addEventListener('click', () => {
 function escapeHtml(s) { return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function copyText(t) { try { navigator.clipboard.writeText(t); } catch(e) { const ta = document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(_){} ta.remove(); } }
 let toastTimer = null;
+// ============================================================
+// MIXLAB: rotate the palette around the wheel keeping its relationships, or
+// generate a harmony scheme from its dominant hue. all in OKLCh so distances
+// stay perceptual; reconstructed to sRGB via oklabToRgb.
+// ============================================================
+const mixState = { rotation: 0, harmony: 'original' };
+function mixBaseColors() {
+  const src = (state.palette && state.palette.length) ? state.palette : currentPaletteDom();
+  return (src || []).map(c => {
+    const lab = c.lab || rgbToOklab(c.rgb[0], c.rgb[1], c.rgb[2]);
+    return { L: lab[0], C: Math.hypot(lab[1], lab[2]), h: Math.atan2(lab[2], lab[1]) };
+  });
+}
+function mixGenerate() {
+  const base = mixBaseColors();
+  if (!base.length) return [];
+  let set;
+  if (mixState.harmony === 'original') {
+    set = base.map(c => ({ L: c.L, C: c.C, h: c.h }));
+  } else if (mixState.harmony === 'mono') {
+    const anchor = base.reduce((a, b) => b.C > a.C ? b : a);
+    set = [0.30, 0.45, 0.60, 0.75, 0.90].map(L => ({ L, C: anchor.C, h: anchor.h }));
+  } else {
+    const anchor = base.reduce((a, b) => b.C > a.C ? b : a);
+    const offs = { complementary: [0, 180], analogous: [-30, 0, 30], triadic: [0, 120, 240], tetradic: [0, 90, 180, 270], split: [0, 150, 210] }[mixState.harmony] || [0];
+    set = offs.map(d => ({ L: anchor.L, C: anchor.C, h: anchor.h + d*Math.PI/180 }));
+  }
+  // one rotation delta added to every hue -> relative distances preserved
+  const rot = mixState.rotation * Math.PI / 180;
+  return set.map(c => {
+    const h = c.h + rot, a = c.C*Math.cos(h), b = c.C*Math.sin(h);
+    const rgb = oklabToRgb(c.L, a, b);
+    return { rgb, hex: rgbToHex(rgb[0], rgb[1], rgb[2]), lab: [c.L, a, b] };
+  });
+}
+function renderMixLab() {
+  const colors = mixGenerate();
+  document.getElementById('mix-wheel').innerHTML = colorWheelSvg(colors, 96);
+  const sw = document.getElementById('mix-swatches'); sw.innerHTML = '';
+  if (!colors.length) { sw.innerHTML = '<div class="mix-empty">extract a palette first, then open MixLab</div>'; return; }
+  colors.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'mix-sw'; el.style.background = c.hex; el.title = c.hex + ' · click to copy';
+    el.innerHTML = `<span>${c.hex}</span>`;
+    el.addEventListener('click', () => copyColor(c.hex, el));
+    sw.appendChild(el);
+  });
+}
+(function () {
+  const panel = document.getElementById('mixlab'), head = document.getElementById('mix-head');
+  document.getElementById('mixlab-btn').addEventListener('click', () => {
+    panel.classList.add('show');
+    if (!panel.style.left) { panel.style.left = Math.max(12, (window.innerWidth - 380) / 2) + 'px'; panel.style.top = '80px'; }
+    renderMixLab();
+  });
+  document.getElementById('mix-close').addEventListener('click', () => panel.classList.remove('show'));
+  document.querySelectorAll('#mix-harmonies [data-harmony]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      mixState.harmony = btn.dataset.harmony;
+      document.querySelectorAll('#mix-harmonies [data-harmony]').forEach(b => b.classList.toggle('active', b === btn));
+      renderMixLab();
+    });
+  });
+  const rot = document.getElementById('mix-rot');
+  rot.addEventListener('input', () => { mixState.rotation = +rot.value; document.getElementById('mix-rot-val').textContent = rot.value + '°'; renderMixLab(); });
+  let drag = null;
+  head.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button')) return;
+    const r = panel.getBoundingClientRect(); drag = { dx: e.clientX - r.left, dy: e.clientY - r.top }; e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!drag) return;
+    const x = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, e.clientX - drag.dx));
+    const y = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, e.clientY - drag.dy));
+    panel.style.left = x + 'px'; panel.style.top = y + 'px';
+  });
+  window.addEventListener('mouseup', () => { drag = null; });
+})();
 function toast(msg) {
   const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
