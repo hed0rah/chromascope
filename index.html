@@ -644,6 +644,40 @@ kbd {
   min-width: 300px; min-height: 220px; max-width: 92vw; max-height: 88vh;
 }
 .compare-palette.floating .cp-head { cursor: move; user-select: none; }
+/* color-count slider */
+.cp-ctlrow { display: flex; align-items: center; gap: 8px; }
+.cp-ctlrow .cp-ctllbl { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.cp-ctlrow input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+.cp-ctlrow .cp-ctlval { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; color: var(--fg-strong); min-width: 18px; text-align: right; }
+/* mini hue/chroma wheel, shown only in the floating popout */
+.compare-palette .cp-wheel { display: none; }
+.compare-palette.floating .cp-wheel { display: block; border-top: 1px solid var(--border); padding-top: 10px; }
+.compare-palette .cp-wheel-cap { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 4px; }
+.compare-palette .cp-wheel svg { width: 100%; max-width: 240px; height: auto; display: block; margin: 0 auto; }
+/* floating: ribbon grows with the window height */
+.compare-palette.floating .cp-ribbon { flex: 1 1 60px; min-height: 60px; max-height: 200px; }
+/* MixLab floating panel */
+.mixlab {
+  position: fixed; z-index: 46; display: none; flex-direction: column; gap: 10px;
+  width: 360px; min-width: 300px; min-height: 320px; max-width: 92vw; max-height: 88vh;
+  background: var(--bg); border: 1px solid var(--border-strong);
+  box-shadow: 0 14px 50px rgba(0,0,0,0.6); resize: both; overflow: auto; padding: 10px 14px 14px;
+}
+.mixlab.show { display: flex; }
+.mix-head { display: flex; align-items: baseline; gap: 10px; cursor: move; user-select: none; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.mix-head .cp-title { color: var(--fg-strong); }
+.mix-head .mix-sub { font-size: 8.5px; text-transform: none; letter-spacing: 0.02em; color: var(--muted-strong); }
+.mix-head .cp-acts { margin-left: auto; }
+.mix-harmonies { display: flex; flex-wrap: wrap; gap: 4px; }
+.mix-wheel { width: 100%; max-width: 250px; height: auto; display: block; margin: 2px auto; }
+.mix-rotate { display: flex; align-items: center; gap: 8px; }
+.mix-rotate label { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.mix-rotate input { flex: 1; accent-color: var(--accent); cursor: pointer; }
+.mix-rotate span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; color: var(--fg-strong); min-width: 34px; text-align: right; }
+.mix-swatches { display: flex; flex-wrap: wrap; gap: 3px; }
+.mix-sw { flex: 1 1 56px; min-width: 52px; height: 46px; display: flex; align-items: flex-end; justify-content: center; cursor: pointer; border: 1px solid rgba(0,0,0,0.3); }
+.mix-sw span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 8px; background: rgba(0,0,0,0.5); color: #fff; padding: 1px 3px; margin-bottom: 3px; border-radius: 2px; }
+.mix-empty { color: var(--muted); font-style: italic; font-size: 11px; padding: 10px 0; }
 /* proportional ribbon + legend: each ribbon segment's width encodes its
    coverage share; the hex codes live in the legend below, where they have
    room and never get clipped no matter how thin a segment is. */
@@ -890,6 +924,7 @@ kbd {
   <input type="file" id="file-input" accept="image/*" hidden>
   <button class="btn" id="load-btn">Load</button>
   <button class="btn ghost" id="palette-btn" disabled>Palette</button>
+  <button class="btn ghost" id="mixlab-btn" disabled title="open MixLab: rotate the palette + harmony schemes">MixLab</button>
   <button class="btn ghost" id="export-btn" disabled>Export</button>
   <button class="btn ghost geo-toggle" id="geo-toggle" title="Geometry mode">Geometry</button>
   <button class="btn ghost icon" id="about-btn" title="About / shortcuts">?</button>
@@ -1169,8 +1204,14 @@ kbd {
         <button class="cp-mode-btn" data-pal-mode="spread" title="merge near-identical colors so the palette shows real variety, not eight shades of white">spread</button>
         <button class="cp-mode-btn" data-pal-mode="subject" title="weight by where colors sit · a tight, central color (the thing you framed) outranks diffuse background">subject</button>
       </div>
+      <div class="cp-ctlrow">
+        <label class="cp-ctllbl">colors</label>
+        <input type="range" id="pal-count-range" min="4" max="24" value="12" title="how many colors to extract">
+        <span class="cp-ctlval" id="pal-count-val">12</span>
+      </div>
       <div class="cp-ribbon" id="sel-pal-ribbon" style="display:none"></div>
       <div class="cp-legend" id="sel-pal-legend" style="display:none"></div>
+      <div class="cp-wheel" id="cp-wheel"><div class="cp-wheel-cap">relationships</div><svg id="cp-wheel-svg" viewBox="-122 -118 244 236"></svg></div>
       <div class="cp-committed" id="cp-committed" style="display:none">
         <div class="cp-committed-head">extracted <span class="count" id="pal-count"></span></div>
         <div class="palette-grid" id="palette-grid"></div>
@@ -1203,6 +1244,30 @@ kbd {
       <button class="btn primary" id="export-download">Download</button>
     </div>
   </div>
+</div>
+
+<div class="mixlab" id="mixlab">
+  <div class="mix-head" id="mix-head">
+    <span class="cp-title">MixLab</span>
+    <span class="mix-sub">rotate the palette · keep its relationships</span>
+    <div class="cp-acts"><button class="cp-act" id="mix-close">close</button></div>
+  </div>
+  <div class="mix-harmonies" id="mix-harmonies">
+    <button class="cp-mode-btn active" data-harmony="original" title="the extracted palette as-is">original</button>
+    <button class="cp-mode-btn" data-harmony="complementary" title="two hues opposite on the wheel">complementary</button>
+    <button class="cp-mode-btn" data-harmony="analogous" title="adjacent hues">analogous</button>
+    <button class="cp-mode-btn" data-harmony="triadic" title="three hues 120° apart">triadic</button>
+    <button class="cp-mode-btn" data-harmony="tetradic" title="four hues 90° apart">tetradic</button>
+    <button class="cp-mode-btn" data-harmony="split" title="a hue plus the two beside its complement">split</button>
+    <button class="cp-mode-btn" data-harmony="mono" title="one hue, stepped in lightness">mono</button>
+  </div>
+  <svg class="mix-wheel" id="mix-wheel" viewBox="-122 -118 244 236"></svg>
+  <div class="mix-rotate">
+    <label>rotate</label>
+    <input type="range" id="mix-rot" min="0" max="360" value="0">
+    <span id="mix-rot-val">0°</span>
+  </div>
+  <div class="mix-swatches" id="mix-swatches"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1274,6 +1339,18 @@ function rgbToOklab(r, g, b) {
   ];
 }
 function labDist(p, c) { return Math.sqrt((p[0]-c[0])**2 + (p[1]-c[1])**2 + (p[2]-c[2])**2); }
+// inverse OKLab -> sRGB, for reconstructing colors at new hues (wheel, MixLab)
+function oklabToRgb(L, a, b) {
+  const l_ = L + 0.3963377774*a + 0.2158037573*b;
+  const m_ = L - 0.1055613458*a - 0.0638541728*b;
+  const s_ = L - 0.0894841775*a - 1.2914855480*b;
+  const l = l_*l_*l_, m = m_*m_*m_, s = s_*s_*s_;
+  const lr = 4.0767416621*l - 3.3077115913*m + 0.2309699292*s;
+  const lg = -1.2684380046*l + 2.6097574011*m - 0.3413193965*s;
+  const lb = -0.0041960863*l - 0.7034186147*m + 1.7076147010*s;
+  const f = c => { c = c <= 0.0031308 ? 12.92*c : 1.055*Math.pow(Math.max(0, c), 1/2.4) - 0.055; return Math.round(Math.max(0, Math.min(1, c)) * 255); };
+  return [f(lr), f(lg), f(lb)];
+}
 function hueName(h) {
   if (h < 15 || h >= 345) return 'red';
   if (h < 45)  return 'red-orange';
@@ -1315,6 +1392,7 @@ const state = {
   palSource: 'selection',         // selection | whole (which pixels the palette reads)
   notanTiers: 3,                  // number of value tiers for the notan study
   _notanRegion: null,             // last source region drawn into the notan canvas
+  palCount: 12,                   // how many colors to cluster + show (4..24)
   regions: [],                    // saved regions for compare + export
   regionCounter: 0,
   measure: null,                  // {a:{x,y}, b:{x,y}} in internal px
@@ -1392,6 +1470,7 @@ function finishLoad(label) {
   document.getElementById('empty-pane').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('palette-btn').disabled = false;
+  document.getElementById('mixlab-btn').disabled = false;
   document.getElementById('export-btn').disabled = false;
   resizeCanvases();
   fitView();
@@ -1433,7 +1512,7 @@ function setupImage(img) {
   state.measure = null;
   state.palette = null;
   state._selDom = null;
-  state.wholeClusters = state.srcImageData ? kmeansColors(state.srcImageData.data, 12, 8, { w: state.w, h: state.h }) : null;
+  state.wholeClusters = state.srcImageData ? kmeansColors(state.srcImageData.data, state.palCount, 8, { w: state.w, h: state.h }) : null;
   state.wholeDom = state.wholeClusters ? applyPalMode(state.wholeClusters) : null;
   state.regions = [];
   state.regionCounter = 0;
@@ -2130,7 +2209,7 @@ function analyzeSelection() {
   if (!sel || !state.srcImageData) return;
   const { data, w, h } = selectionPixels();
   const { N, Rh, Gh, Bh, Hh, stats } = computeImageStats(data);
-  state._selClusters = kmeansColors(data, 12, 10, { w, h });
+  state._selClusters = kmeansColors(data, state.palCount, 10, { w, h });
 
   renderSelectionInfo(sel, N);
   renderStats(stats, 'selection');
@@ -2485,11 +2564,39 @@ function refreshSelPalette() {
     resetSelPalette();
   }
 }
+// copy a color and confirm it, so a click always gives feedback
+function copyColor(hex, el) { copyText(hex); if (el) flash(el); toast('Copied ' + hex); }
+// place colors on an OKLab hue/chroma wheel: angle is hue, radius is chroma,
+// each dot is the color. lets you read how a palette's colors relate.
+function colorWheelSvg(colors, R) {
+  R = R || 96;
+  const CMAX = 0.33;
+  let html = '';
+  const steps = 48;
+  for (let i = 0; i < steps; i++) {
+    const p0 = (i/steps)*Math.PI*2, p1 = ((i+1)/steps)*Math.PI*2;
+    const rIn = R+3, rOut = R+11;
+    const x0=rIn*Math.cos(p0), y0=rIn*Math.sin(p0), x1=rOut*Math.cos(p0), y1=rOut*Math.sin(p0);
+    const x2=rOut*Math.cos(p1), y2=rOut*Math.sin(p1), x3=rIn*Math.cos(p1), y3=rIn*Math.sin(p1);
+    const H = -(p0+p1)/2;                          // OKLab hue pointing toward this screen angle
+    const rgb = oklabToRgb(0.72, 0.15*Math.cos(H), 0.15*Math.sin(H));
+    html += `<path d="M ${x0.toFixed(1)} ${y0.toFixed(1)} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${rOut} ${rOut} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L ${x3.toFixed(1)} ${y3.toFixed(1)} A ${rIn} ${rIn} 0 0 0 ${x0.toFixed(1)} ${y0.toFixed(1)} Z" fill="rgb(${rgb[0]},${rgb[1]},${rgb[2]})"/>`;
+  }
+  [R*0.33, R*0.66, R].forEach(r => html += `<circle r="${r.toFixed(1)}" fill="none" stroke="var(--border)" stroke-width="0.6" opacity="0.4"/>`);
+  html += `<line x1="${-R}" y1="0" x2="${R}" y2="0" stroke="var(--border-strong)" stroke-width="0.5" opacity="0.4"/><line x1="0" y1="${-R}" x2="0" y2="${R}" stroke="var(--border-strong)" stroke-width="0.5" opacity="0.4"/>`;
+  colors.forEach(c => {
+    const lab = c.lab || rgbToOklab(c.rgb[0], c.rgb[1], c.rgb[2]);
+    let x = lab[1]/CMAX*R, y = -lab[2]/CMAX*R;     // matches the gamut scatter orientation
+    const d = Math.hypot(x, y); if (d > R) { x *= R/d; y *= R/d; }
+    html += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5.5" fill="${c.hex}" stroke="rgba(0,0,0,0.45)" stroke-width="1"/>`;
+  });
+  return html;
+}
 function renderSelPalette(dom, srcLabel) {
   const ribbon = document.getElementById('sel-pal-ribbon');
   const legend = document.getElementById('sel-pal-legend');
   const empty = document.getElementById('sel-pal-empty');
-  const top = dom.slice(0, 8);
+  const top = dom.slice(0, state.palCount || 12);
   if (!top.length) { resetSelPalette(); return; }
   empty.style.display = 'none';
   ribbon.style.display = ''; legend.style.display = '';
@@ -2505,7 +2612,7 @@ function renderSelPalette(dom, srcLabel) {
     seg.style.flex = c.pct + ' 0 0';
     seg.style.background = c.hex;
     seg.title = title;
-    seg.addEventListener('click', () => { copyText(c.hex); flash(seg); });
+    seg.addEventListener('click', () => copyColor(c.hex, seg));
     ribbon.appendChild(seg);
 
     const item = document.createElement('div');
@@ -2515,7 +2622,7 @@ function renderSelPalette(dom, srcLabel) {
       `<span class="cp-sw" style="background:${c.hex}"></span>` +
       `<span class="cp-hx">${c.hex}</span>` +
       `<span class="cp-pc">${pctTxt}</span>`;
-    item.addEventListener('click', () => { copyText(c.hex); flash(item); });
+    item.addEventListener('click', () => copyColor(c.hex, item));
     legend.appendChild(item);
   });
   document.getElementById('sel-pal-count').textContent = 'k' + top.length;
@@ -2524,6 +2631,8 @@ function renderSelPalette(dom, srcLabel) {
   const harm = classifyHarmony(dom);
   const harmEl = document.getElementById('sel-pal-harm');
   if (harmEl) harmEl.textContent = harm ? harm.scheme + ' · ' + harm.temp : '';
+  const wheelEl = document.getElementById('cp-wheel-svg');
+  if (wheelEl) wheelEl.innerHTML = colorWheelSvg(top);
 }
 function resetSelPalette() {
   const ribbon = document.getElementById('sel-pal-ribbon');
@@ -2559,6 +2668,22 @@ document.querySelectorAll('#sel-pal-source [data-pal-source]').forEach(btn => {
     refreshSelPalette();
   });
 });
+// color-count slider: re-cluster with the new k on release (input just updates
+// the label). more colors means minority hues get their own cluster.
+(function () {
+  const range = document.getElementById('pal-count-range');
+  if (!range) return;
+  range.value = state.palCount;
+  range.addEventListener('input', () => { document.getElementById('pal-count-val').textContent = range.value; });
+  range.addEventListener('change', () => {
+    state.palCount = +range.value;
+    if (state.srcImageData) {
+      state.wholeClusters = kmeansColors(state.srcImageData.data, state.palCount, 8, { w: state.w, h: state.h });
+      state.wholeDom = applyPalMode(state.wholeClusters);
+    }
+    if (state.selection) analyzeSelection(); else refreshSelPalette();
+  });
+})();
 // the live palette currently on display, used by extract to commit it
 function currentPaletteDom() {
   if ((state.palSource || 'selection') === 'whole') return state.wholeDom || [];
@@ -2646,7 +2771,7 @@ document.getElementById('palette-btn').addEventListener('click', () => {
 function extractPalette() {
   const dom = currentPaletteDom();
   if (!dom || !dom.length) { toast('No colors to extract'); return; }
-  state.palette = dom.slice(0, 12).map((c, i) => ({ name: 'Color ' + (i+1), hex: c.hex, rgb: c.rgb, pct: c.pct }));
+  state.palette = dom.slice(0, state.palCount || 12).map((c, i) => ({ name: 'Color ' + (i+1), hex: c.hex, rgb: c.rgb, pct: c.pct }));
   renderPalette();
   if (state.selection) renderMatch(selectionPixels().data);
   toast('Extracted ' + state.palette.length + '-color palette');
@@ -2662,7 +2787,7 @@ function renderPalette() {
     cell.innerHTML = `<div class="pal-sw" style="background:${p.hex}" title="${p.hex} - click to copy"></div>
       <input class="pal-name" value="${escapeHtml(p.name)}" spellcheck="false">
       <div class="pal-meta"><span class="hex">${p.hex}</span><span>${(p.pct*100).toFixed(0)}%</span></div>`;
-    cell.querySelector('.pal-sw').addEventListener('click', () => { copyText(p.hex); flash(cell); });
+    cell.querySelector('.pal-sw').addEventListener('click', () => copyColor(p.hex, cell));
     cell.querySelector('.pal-name').addEventListener('input', (e) => { state.palette[idx].name = e.target.value; });
     cell.querySelector('.pal-name').addEventListener('change', () => { if (state.selection) renderMatch(selectionPixels().data); });
     grid.appendChild(cell);
@@ -2944,6 +3069,84 @@ document.getElementById('export-download').addEventListener('click', () => {
 function escapeHtml(s) { return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function copyText(t) { try { navigator.clipboard.writeText(t); } catch(e) { const ta = document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(_){} ta.remove(); } }
 let toastTimer = null;
+// ============================================================
+// MIXLAB: rotate the palette around the wheel keeping its relationships, or
+// generate a harmony scheme from its dominant hue. all in OKLCh so distances
+// stay perceptual; reconstructed to sRGB via oklabToRgb.
+// ============================================================
+const mixState = { rotation: 0, harmony: 'original' };
+function mixBaseColors() {
+  const src = (state.palette && state.palette.length) ? state.palette : currentPaletteDom();
+  return (src || []).map(c => {
+    const lab = c.lab || rgbToOklab(c.rgb[0], c.rgb[1], c.rgb[2]);
+    return { L: lab[0], C: Math.hypot(lab[1], lab[2]), h: Math.atan2(lab[2], lab[1]) };
+  });
+}
+function mixGenerate() {
+  const base = mixBaseColors();
+  if (!base.length) return [];
+  let set;
+  if (mixState.harmony === 'original') {
+    set = base.map(c => ({ L: c.L, C: c.C, h: c.h }));
+  } else if (mixState.harmony === 'mono') {
+    const anchor = base.reduce((a, b) => b.C > a.C ? b : a);
+    set = [0.30, 0.45, 0.60, 0.75, 0.90].map(L => ({ L, C: anchor.C, h: anchor.h }));
+  } else {
+    const anchor = base.reduce((a, b) => b.C > a.C ? b : a);
+    const offs = { complementary: [0, 180], analogous: [-30, 0, 30], triadic: [0, 120, 240], tetradic: [0, 90, 180, 270], split: [0, 150, 210] }[mixState.harmony] || [0];
+    set = offs.map(d => ({ L: anchor.L, C: anchor.C, h: anchor.h + d*Math.PI/180 }));
+  }
+  // one rotation delta added to every hue -> relative distances preserved
+  const rot = mixState.rotation * Math.PI / 180;
+  return set.map(c => {
+    const h = c.h + rot, a = c.C*Math.cos(h), b = c.C*Math.sin(h);
+    const rgb = oklabToRgb(c.L, a, b);
+    return { rgb, hex: rgbToHex(rgb[0], rgb[1], rgb[2]), lab: [c.L, a, b] };
+  });
+}
+function renderMixLab() {
+  const colors = mixGenerate();
+  document.getElementById('mix-wheel').innerHTML = colorWheelSvg(colors, 96);
+  const sw = document.getElementById('mix-swatches'); sw.innerHTML = '';
+  if (!colors.length) { sw.innerHTML = '<div class="mix-empty">extract a palette first, then open MixLab</div>'; return; }
+  colors.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'mix-sw'; el.style.background = c.hex; el.title = c.hex + ' · click to copy';
+    el.innerHTML = `<span>${c.hex}</span>`;
+    el.addEventListener('click', () => copyColor(c.hex, el));
+    sw.appendChild(el);
+  });
+}
+(function () {
+  const panel = document.getElementById('mixlab'), head = document.getElementById('mix-head');
+  document.getElementById('mixlab-btn').addEventListener('click', () => {
+    panel.classList.add('show');
+    if (!panel.style.left) { panel.style.left = Math.max(12, (window.innerWidth - 380) / 2) + 'px'; panel.style.top = '80px'; }
+    renderMixLab();
+  });
+  document.getElementById('mix-close').addEventListener('click', () => panel.classList.remove('show'));
+  document.querySelectorAll('#mix-harmonies [data-harmony]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      mixState.harmony = btn.dataset.harmony;
+      document.querySelectorAll('#mix-harmonies [data-harmony]').forEach(b => b.classList.toggle('active', b === btn));
+      renderMixLab();
+    });
+  });
+  const rot = document.getElementById('mix-rot');
+  rot.addEventListener('input', () => { mixState.rotation = +rot.value; document.getElementById('mix-rot-val').textContent = rot.value + '°'; renderMixLab(); });
+  let drag = null;
+  head.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button')) return;
+    const r = panel.getBoundingClientRect(); drag = { dx: e.clientX - r.left, dy: e.clientY - r.top }; e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!drag) return;
+    const x = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, e.clientX - drag.dx));
+    const y = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, e.clientY - drag.dy));
+    panel.style.left = x + 'px'; panel.style.top = y + 'px';
+  });
+  window.addEventListener('mouseup', () => { drag = null; });
+})();
 function toast(msg) {
   const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
