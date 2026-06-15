@@ -644,6 +644,18 @@ kbd {
   min-width: 300px; min-height: 220px; max-width: 92vw; max-height: 88vh;
 }
 .compare-palette.floating .cp-head { cursor: move; user-select: none; }
+/* color-count slider */
+.cp-ctlrow { display: flex; align-items: center; gap: 8px; }
+.cp-ctlrow .cp-ctllbl { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.cp-ctlrow input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+.cp-ctlrow .cp-ctlval { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; color: var(--fg-strong); min-width: 18px; text-align: right; }
+/* mini hue/chroma wheel, shown only in the floating popout */
+.compare-palette .cp-wheel { display: none; }
+.compare-palette.floating .cp-wheel { display: block; border-top: 1px solid var(--border); padding-top: 10px; }
+.compare-palette .cp-wheel-cap { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 4px; }
+.compare-palette .cp-wheel svg { width: 100%; max-width: 240px; height: auto; display: block; margin: 0 auto; }
+/* floating: ribbon grows with the window height */
+.compare-palette.floating .cp-ribbon { flex: 1 1 60px; min-height: 60px; max-height: 200px; }
 /* proportional ribbon + legend: each ribbon segment's width encodes its
    coverage share; the hex codes live in the legend below, where they have
    room and never get clipped no matter how thin a segment is. */
@@ -1169,8 +1181,14 @@ kbd {
         <button class="cp-mode-btn" data-pal-mode="spread" title="merge near-identical colors so the palette shows real variety, not eight shades of white">spread</button>
         <button class="cp-mode-btn" data-pal-mode="subject" title="weight by where colors sit · a tight, central color (the thing you framed) outranks diffuse background">subject</button>
       </div>
+      <div class="cp-ctlrow">
+        <label class="cp-ctllbl">colors</label>
+        <input type="range" id="pal-count-range" min="4" max="24" value="12" title="how many colors to extract">
+        <span class="cp-ctlval" id="pal-count-val">12</span>
+      </div>
       <div class="cp-ribbon" id="sel-pal-ribbon" style="display:none"></div>
       <div class="cp-legend" id="sel-pal-legend" style="display:none"></div>
+      <div class="cp-wheel" id="cp-wheel"><div class="cp-wheel-cap">relationships</div><svg id="cp-wheel-svg" viewBox="-122 -118 244 236"></svg></div>
       <div class="cp-committed" id="cp-committed" style="display:none">
         <div class="cp-committed-head">extracted <span class="count" id="pal-count"></span></div>
         <div class="palette-grid" id="palette-grid"></div>
@@ -1274,6 +1292,18 @@ function rgbToOklab(r, g, b) {
   ];
 }
 function labDist(p, c) { return Math.sqrt((p[0]-c[0])**2 + (p[1]-c[1])**2 + (p[2]-c[2])**2); }
+// inverse OKLab -> sRGB, for reconstructing colors at new hues (wheel, MixLab)
+function oklabToRgb(L, a, b) {
+  const l_ = L + 0.3963377774*a + 0.2158037573*b;
+  const m_ = L - 0.1055613458*a - 0.0638541728*b;
+  const s_ = L - 0.0894841775*a - 1.2914855480*b;
+  const l = l_*l_*l_, m = m_*m_*m_, s = s_*s_*s_;
+  const lr = 4.0767416621*l - 3.3077115913*m + 0.2309699292*s;
+  const lg = -1.2684380046*l + 2.6097574011*m - 0.3413193965*s;
+  const lb = -0.0041960863*l - 0.7034186147*m + 1.7076147010*s;
+  const f = c => { c = c <= 0.0031308 ? 12.92*c : 1.055*Math.pow(Math.max(0, c), 1/2.4) - 0.055; return Math.round(Math.max(0, Math.min(1, c)) * 255); };
+  return [f(lr), f(lg), f(lb)];
+}
 function hueName(h) {
   if (h < 15 || h >= 345) return 'red';
   if (h < 45)  return 'red-orange';
@@ -1315,6 +1345,7 @@ const state = {
   palSource: 'selection',         // selection | whole (which pixels the palette reads)
   notanTiers: 3,                  // number of value tiers for the notan study
   _notanRegion: null,             // last source region drawn into the notan canvas
+  palCount: 12,                   // how many colors to cluster + show (4..24)
   regions: [],                    // saved regions for compare + export
   regionCounter: 0,
   measure: null,                  // {a:{x,y}, b:{x,y}} in internal px
@@ -1433,7 +1464,7 @@ function setupImage(img) {
   state.measure = null;
   state.palette = null;
   state._selDom = null;
-  state.wholeClusters = state.srcImageData ? kmeansColors(state.srcImageData.data, 12, 8, { w: state.w, h: state.h }) : null;
+  state.wholeClusters = state.srcImageData ? kmeansColors(state.srcImageData.data, state.palCount, 8, { w: state.w, h: state.h }) : null;
   state.wholeDom = state.wholeClusters ? applyPalMode(state.wholeClusters) : null;
   state.regions = [];
   state.regionCounter = 0;
@@ -2130,7 +2161,7 @@ function analyzeSelection() {
   if (!sel || !state.srcImageData) return;
   const { data, w, h } = selectionPixels();
   const { N, Rh, Gh, Bh, Hh, stats } = computeImageStats(data);
-  state._selClusters = kmeansColors(data, 12, 10, { w, h });
+  state._selClusters = kmeansColors(data, state.palCount, 10, { w, h });
 
   renderSelectionInfo(sel, N);
   renderStats(stats, 'selection');
@@ -2485,11 +2516,39 @@ function refreshSelPalette() {
     resetSelPalette();
   }
 }
+// copy a color and confirm it, so a click always gives feedback
+function copyColor(hex, el) { copyText(hex); if (el) flash(el); toast('Copied ' + hex); }
+// place colors on an OKLab hue/chroma wheel: angle is hue, radius is chroma,
+// each dot is the color. lets you read how a palette's colors relate.
+function colorWheelSvg(colors, R) {
+  R = R || 96;
+  const CMAX = 0.33;
+  let html = '';
+  const steps = 48;
+  for (let i = 0; i < steps; i++) {
+    const p0 = (i/steps)*Math.PI*2, p1 = ((i+1)/steps)*Math.PI*2;
+    const rIn = R+3, rOut = R+11;
+    const x0=rIn*Math.cos(p0), y0=rIn*Math.sin(p0), x1=rOut*Math.cos(p0), y1=rOut*Math.sin(p0);
+    const x2=rOut*Math.cos(p1), y2=rOut*Math.sin(p1), x3=rIn*Math.cos(p1), y3=rIn*Math.sin(p1);
+    const H = -(p0+p1)/2;                          // OKLab hue pointing toward this screen angle
+    const rgb = oklabToRgb(0.72, 0.15*Math.cos(H), 0.15*Math.sin(H));
+    html += `<path d="M ${x0.toFixed(1)} ${y0.toFixed(1)} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${rOut} ${rOut} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L ${x3.toFixed(1)} ${y3.toFixed(1)} A ${rIn} ${rIn} 0 0 0 ${x0.toFixed(1)} ${y0.toFixed(1)} Z" fill="rgb(${rgb[0]},${rgb[1]},${rgb[2]})"/>`;
+  }
+  [R*0.33, R*0.66, R].forEach(r => html += `<circle r="${r.toFixed(1)}" fill="none" stroke="var(--border)" stroke-width="0.6" opacity="0.4"/>`);
+  html += `<line x1="${-R}" y1="0" x2="${R}" y2="0" stroke="var(--border-strong)" stroke-width="0.5" opacity="0.4"/><line x1="0" y1="${-R}" x2="0" y2="${R}" stroke="var(--border-strong)" stroke-width="0.5" opacity="0.4"/>`;
+  colors.forEach(c => {
+    const lab = c.lab || rgbToOklab(c.rgb[0], c.rgb[1], c.rgb[2]);
+    let x = lab[1]/CMAX*R, y = -lab[2]/CMAX*R;     // matches the gamut scatter orientation
+    const d = Math.hypot(x, y); if (d > R) { x *= R/d; y *= R/d; }
+    html += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5.5" fill="${c.hex}" stroke="rgba(0,0,0,0.45)" stroke-width="1"/>`;
+  });
+  return html;
+}
 function renderSelPalette(dom, srcLabel) {
   const ribbon = document.getElementById('sel-pal-ribbon');
   const legend = document.getElementById('sel-pal-legend');
   const empty = document.getElementById('sel-pal-empty');
-  const top = dom.slice(0, 8);
+  const top = dom.slice(0, state.palCount || 12);
   if (!top.length) { resetSelPalette(); return; }
   empty.style.display = 'none';
   ribbon.style.display = ''; legend.style.display = '';
@@ -2505,7 +2564,7 @@ function renderSelPalette(dom, srcLabel) {
     seg.style.flex = c.pct + ' 0 0';
     seg.style.background = c.hex;
     seg.title = title;
-    seg.addEventListener('click', () => { copyText(c.hex); flash(seg); });
+    seg.addEventListener('click', () => copyColor(c.hex, seg));
     ribbon.appendChild(seg);
 
     const item = document.createElement('div');
@@ -2515,7 +2574,7 @@ function renderSelPalette(dom, srcLabel) {
       `<span class="cp-sw" style="background:${c.hex}"></span>` +
       `<span class="cp-hx">${c.hex}</span>` +
       `<span class="cp-pc">${pctTxt}</span>`;
-    item.addEventListener('click', () => { copyText(c.hex); flash(item); });
+    item.addEventListener('click', () => copyColor(c.hex, item));
     legend.appendChild(item);
   });
   document.getElementById('sel-pal-count').textContent = 'k' + top.length;
@@ -2524,6 +2583,8 @@ function renderSelPalette(dom, srcLabel) {
   const harm = classifyHarmony(dom);
   const harmEl = document.getElementById('sel-pal-harm');
   if (harmEl) harmEl.textContent = harm ? harm.scheme + ' · ' + harm.temp : '';
+  const wheelEl = document.getElementById('cp-wheel-svg');
+  if (wheelEl) wheelEl.innerHTML = colorWheelSvg(top);
 }
 function resetSelPalette() {
   const ribbon = document.getElementById('sel-pal-ribbon');
@@ -2559,6 +2620,22 @@ document.querySelectorAll('#sel-pal-source [data-pal-source]').forEach(btn => {
     refreshSelPalette();
   });
 });
+// color-count slider: re-cluster with the new k on release (input just updates
+// the label). more colors means minority hues get their own cluster.
+(function () {
+  const range = document.getElementById('pal-count-range');
+  if (!range) return;
+  range.value = state.palCount;
+  range.addEventListener('input', () => { document.getElementById('pal-count-val').textContent = range.value; });
+  range.addEventListener('change', () => {
+    state.palCount = +range.value;
+    if (state.srcImageData) {
+      state.wholeClusters = kmeansColors(state.srcImageData.data, state.palCount, 8, { w: state.w, h: state.h });
+      state.wholeDom = applyPalMode(state.wholeClusters);
+    }
+    if (state.selection) analyzeSelection(); else refreshSelPalette();
+  });
+})();
 // the live palette currently on display, used by extract to commit it
 function currentPaletteDom() {
   if ((state.palSource || 'selection') === 'whole') return state.wholeDom || [];
@@ -2646,7 +2723,7 @@ document.getElementById('palette-btn').addEventListener('click', () => {
 function extractPalette() {
   const dom = currentPaletteDom();
   if (!dom || !dom.length) { toast('No colors to extract'); return; }
-  state.palette = dom.slice(0, 12).map((c, i) => ({ name: 'Color ' + (i+1), hex: c.hex, rgb: c.rgb, pct: c.pct }));
+  state.palette = dom.slice(0, state.palCount || 12).map((c, i) => ({ name: 'Color ' + (i+1), hex: c.hex, rgb: c.rgb, pct: c.pct }));
   renderPalette();
   if (state.selection) renderMatch(selectionPixels().data);
   toast('Extracted ' + state.palette.length + '-color palette');
@@ -2662,7 +2739,7 @@ function renderPalette() {
     cell.innerHTML = `<div class="pal-sw" style="background:${p.hex}" title="${p.hex} - click to copy"></div>
       <input class="pal-name" value="${escapeHtml(p.name)}" spellcheck="false">
       <div class="pal-meta"><span class="hex">${p.hex}</span><span>${(p.pct*100).toFixed(0)}%</span></div>`;
-    cell.querySelector('.pal-sw').addEventListener('click', () => { copyText(p.hex); flash(cell); });
+    cell.querySelector('.pal-sw').addEventListener('click', () => copyColor(p.hex, cell));
     cell.querySelector('.pal-name').addEventListener('input', (e) => { state.palette[idx].name = e.target.value; });
     cell.querySelector('.pal-name').addEventListener('change', () => { if (state.selection) renderMatch(selectionPixels().data); });
     grid.appendChild(cell);
