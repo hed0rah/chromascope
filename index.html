@@ -678,6 +678,8 @@ kbd {
 .mix-sw { flex: 1 1 56px; min-width: 52px; height: 46px; display: flex; align-items: flex-end; justify-content: center; cursor: pointer; border: 1px solid rgba(0,0,0,0.3); }
 .mix-sw span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 8px; background: rgba(0,0,0,0.5); color: #fff; padding: 1px 3px; margin-bottom: 3px; border-radius: 2px; }
 .mix-empty { color: var(--muted); font-style: italic; font-size: 11px; padding: 10px 0; }
+.mix-actions { display: flex; gap: 6px; }
+.mix-actions .cp-act { flex: 1; text-align: center; }
 /* proportional ribbon + legend: each ribbon segment's width encodes its
    coverage share; the hex codes live in the legend below, where they have
    room and never get clipped no matter how thin a segment is. */
@@ -1268,6 +1270,10 @@ kbd {
     <span id="mix-rot-val">0°</span>
   </div>
   <div class="mix-swatches" id="mix-swatches"></div>
+  <div class="mix-actions">
+    <button class="cp-act" id="mix-copyall">copy all</button>
+    <button class="cp-act" id="mix-topalette">use as palette</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2568,8 +2574,8 @@ function refreshSelPalette() {
 function copyColor(hex, el) { copyText(hex); if (el) flash(el); toast('Copied ' + hex); }
 // place colors on an OKLab hue/chroma wheel: angle is hue, radius is chroma,
 // each dot is the color. lets you read how a palette's colors relate.
-function colorWheelSvg(colors, R) {
-  R = R || 96;
+function colorWheelSvg(colors, R, opts) {
+  R = R || 96; opts = opts || {};
   const CMAX = 0.33;
   let html = '';
   const steps = 48;
@@ -2584,14 +2590,26 @@ function colorWheelSvg(colors, R) {
   }
   [R*0.33, R*0.66, R].forEach(r => html += `<circle r="${r.toFixed(1)}" fill="none" stroke="var(--border)" stroke-width="0.6" opacity="0.4"/>`);
   html += `<line x1="${-R}" y1="0" x2="${R}" y2="0" stroke="var(--border-strong)" stroke-width="0.5" opacity="0.4"/><line x1="0" y1="${-R}" x2="0" y2="${R}" stroke="var(--border-strong)" stroke-width="0.5" opacity="0.4"/>`;
-  colors.forEach(c => {
+  const pts = colors.map(c => {
     const lab = c.lab || rgbToOklab(c.rgb[0], c.rgb[1], c.rgb[2]);
     let x = lab[1]/CMAX*R, y = -lab[2]/CMAX*R;     // matches the gamut scatter orientation
     const d = Math.hypot(x, y); if (d > R) { x *= R/d; y *= R/d; }
-    html += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5.5" fill="${c.hex}" stroke="rgba(0,0,0,0.45)" stroke-width="1"/>`;
+    return { x, y, hex: c.hex };
+  });
+  // connect the dots into the harmony shape (only for small generated sets)
+  if (opts.connect && pts.length >= 2 && pts.length <= 8) {
+    html += `<polygon points="${pts.map(p => p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ')}" fill="none" stroke="var(--fg)" stroke-width="0.8" opacity="0.3"/>`;
+  }
+  pts.forEach(p => {
+    html += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5.5" fill="${p.hex}" stroke="rgba(0,0,0,0.45)" stroke-width="1" data-hex="${p.hex}" style="cursor:pointer"/>`;
   });
   return html;
 }
+// click a dot on any wheel to copy its color
+['cp-wheel-svg', 'mix-wheel'].forEach(id => {
+  const svg = document.getElementById(id);
+  if (svg) svg.addEventListener('click', e => { const hex = e.target.getAttribute && e.target.getAttribute('data-hex'); if (hex) copyColor(hex); });
+});
 function renderSelPalette(dom, srcLabel) {
   const ribbon = document.getElementById('sel-pal-ribbon');
   const legend = document.getElementById('sel-pal-legend');
@@ -3106,7 +3124,7 @@ function mixGenerate() {
 }
 function renderMixLab() {
   const colors = mixGenerate();
-  document.getElementById('mix-wheel').innerHTML = colorWheelSvg(colors, 96);
+  document.getElementById('mix-wheel').innerHTML = colorWheelSvg(colors, 96, { connect: true });
   const sw = document.getElementById('mix-swatches'); sw.innerHTML = '';
   if (!colors.length) { sw.innerHTML = '<div class="mix-empty">extract a palette first, then open MixLab</div>'; return; }
   colors.forEach(c => {
@@ -3146,6 +3164,21 @@ function renderMixLab() {
     panel.style.left = x + 'px'; panel.style.top = y + 'px';
   });
   window.addEventListener('mouseup', () => { drag = null; });
+  window.addEventListener('resize', () => {
+    if (!panel.classList.contains('show')) return;
+    const x = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, parseFloat(panel.style.left) || 0));
+    const y = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, parseFloat(panel.style.top) || 0));
+    panel.style.left = x + 'px'; panel.style.top = y + 'px';
+  });
+  document.getElementById('mix-copyall').addEventListener('click', () => {
+    const cols = mixGenerate(); if (!cols.length) { toast('Nothing to copy'); return; }
+    copyText(cols.map(c => c.hex).join('\n')); toast('Copied ' + cols.length + ' colors');
+  });
+  document.getElementById('mix-topalette').addEventListener('click', () => {
+    const cols = mixGenerate(); if (!cols.length) { toast('Nothing to send'); return; }
+    state.palette = cols.map((c, i) => ({ name: 'Mix ' + (i+1), hex: c.hex, rgb: c.rgb, pct: 1/cols.length }));
+    renderPalette(); toast('Sent ' + cols.length + ' colors to the palette');
+  });
 })();
 function toast(msg) {
   const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
@@ -3174,7 +3207,10 @@ window.addEventListener('keydown', (e) => {
     case '-': case '_': zoomBy(1/1.4); break;
     case '0': fitView(); render(); break;
     case '1': setActual(); break;
-    case 'escape': state.selection = null; state.measure = null; document.getElementById('btn-add').disabled = true; render(); resetPanel(); break;
+    case 'escape':
+      if (document.getElementById('mixlab').classList.contains('show')) { document.getElementById('mixlab').classList.remove('show'); break; }
+      if (document.getElementById('sel-palette').classList.contains('floating')) { document.getElementById('sel-pal-popout').click(); break; }
+      state.selection = null; state.measure = null; document.getElementById('btn-add').disabled = true; render(); resetPanel(); break;
     case 'e': if (state.palette) { document.getElementById('export-btn').click(); } break;
   }
 });
