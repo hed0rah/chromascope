@@ -1099,6 +1099,12 @@ kbd {
           <svg class="hue-wheel" id="hue-wheel" viewBox="-110 -110 220 220"></svg>
         </div>
 
+        <!-- OKLab gamut scatter -->
+        <div class="an-section">
+          <h3>Gamut scatter <span class="count">OKLab a/b</span></h3>
+          <svg class="hue-wheel" id="gamut-scatter" viewBox="-118 -112 236 224"></svg>
+        </div>
+
         <div class="an-section" id="match-section" style="display:none">
           <h3>Palette match <span class="count">nearest pigment</span></h3>
           <div class="match-list" id="match-list"></div>
@@ -2107,6 +2113,7 @@ function analyzeSelection() {
   renderStats(stats, 'selection');
   renderRgbHist(Rh, Gh, Bh);
   renderHueWheel(Hh);
+  renderGamut(data);
   state._selDom = applyPalMode(state._selClusters);
   refreshSelPalette();
   renderMatch(data);
@@ -2119,6 +2126,7 @@ function analyzeWhole() {
   renderStats(stats, 'whole image');
   renderRgbHist(Rh, Gh, Bh);
   renderHueWheel(Hh);
+  renderGamut(state.srcImageData.data);
   return true;
 }
 function kmeansColors(data, k, iterations, opts) {
@@ -2366,6 +2374,34 @@ function renderHueWheel(Hh) {
     html += `<text x="${x}" y="${y+3}" text-anchor="middle" fill="var(--muted)" font-family=""IBM Plex Mono", ui-monospace, monospace" font-size="8">${deg}°</text>`;
   });
   svg.innerHTML = html;
+}
+// OKLab gamut scatter: every sampled pixel plotted in the a/b plane. centre is
+// neutral, distance from centre is chroma, angle is hue. the cloud's shape and
+// reach show a passage's saturation and color range at a glance.
+function renderGamut(data) {
+  const svg = document.getElementById('gamut-scatter');
+  if (!svg) return;
+  const S = 250;                                  // OKLab a/b (~[-0.4,0.4]) -> svg units (~[-100,100])
+  const N = data.length / 4;
+  const step = Math.max(1, Math.floor(N / 1400)) * 4;
+  let grid = '';
+  [25, 50, 75, 100].forEach(r => { grid += `<circle r="${r}" fill="none" stroke="var(--border)" stroke-width="0.6" opacity="0.45"/>`; });
+  grid += `<line x1="-100" y1="0" x2="100" y2="0" stroke="var(--border-strong)" stroke-width="0.6" opacity="0.5"/>`;
+  grid += `<line x1="0" y1="-100" x2="0" y2="100" stroke="var(--border-strong)" stroke-width="0.6" opacity="0.5"/>`;
+  grid += `<text x="103" y="3" fill="var(--muted)" font-size="7" font-family="ui-monospace,monospace">+a</text>`;
+  grid += `<text x="-116" y="3" fill="var(--muted)" font-size="7" font-family="ui-monospace,monospace">-a</text>`;
+  grid += `<text x="3" y="-103" fill="var(--muted)" font-size="7" font-family="ui-monospace,monospace">+b</text>`;
+  grid += `<text x="3" y="110" fill="var(--muted)" font-size="7" font-family="ui-monospace,monospace">-b</text>`;
+  let dots = '';
+  for (let i = 0; i < data.length; i += step) {
+    if (data[i+3] === 0) continue;
+    const r = data[i], g = data[i+1], b = data[i+2];
+    const lab = rgbToOklab(r, g, b);
+    const x = Math.max(-110, Math.min(110, lab[1] * S));
+    const y = Math.max(-110, Math.min(110, -lab[2] * S));   // svg y is down, so +b plots up
+    dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.5" fill="${rgbToHex(r,g,b)}" opacity="0.5"/>`;
+  }
+  svg.innerHTML = grid + dots;
 }
 // Selection palette: dominant colors as prominence-tiered bars.
 // Source is the current selection, or the whole image when nothing is selected.
